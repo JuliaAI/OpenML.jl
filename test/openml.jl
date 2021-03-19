@@ -2,18 +2,18 @@ module TestOpenml
 
 using Test
 using HTTP
-using MLJBase
+using MLJOpenML
 import Tables.istable
 
-response_test = OpenML.load_Dataset_Description(61)
-ntp_test = OpenML.load(61)
+response_test = MLJOpenML.load_Dataset_Description(61)
+ntp_test = MLJOpenML.load(61)
 @test istable(ntp_test)
-dqlist_test = OpenML.load_Data_Qualities_List()
-data_features_test = OpenML.load_Data_Features(61)
-data_qualities_test = OpenML.load_Data_Qualities(61)
+dqlist_test = MLJOpenML.load_Data_Qualities_List()
+data_features_test = MLJOpenML.load_Data_Features(61)
+data_qualities_test = MLJOpenML.load_Data_Qualities(61)
 limit = 5
 offset = 8
-filters_test = OpenML.load_List_And_Filter("limit/$limit/offset/$offset")
+filters_test = MLJOpenML.load_List_And_Filter("limit/$limit/offset/$offset")
 
 @testset "HTTP connection" begin
     @test typeof(response_test) <: Dict

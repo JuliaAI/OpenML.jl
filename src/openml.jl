@@ -1,5 +1,3 @@
-module OpenML
-
 using HTTP
 using JSON
 
@@ -87,7 +85,7 @@ function convert_ARFF_to_rowtable(response)
 end
 
 """
-    OpenML.load(id)
+    MLJOpenML.load(id)
 
 Load the OpenML dataset with specified `id`, from those listed on the
 [OpenML site](https://www.openml.org/search?type=data).
@@ -100,7 +98,7 @@ example:
 
 ```julia
 using DataFrames
-rowtable = OpenML.load(61);
+rowtable = MLJOpenML.load(61);
 df = DataFrame(rowtable);
 df2 = coerce(df, :class=>Multiclass)
 ```
@@ -262,5 +260,3 @@ end
 # Task API
 
 # Run API
-
-end # module
