@@ -100,6 +100,8 @@ example:
 using DataFrames
 rowtable = MLJOpenML.load(61);
 df = DataFrame(rowtable);
+
+using MLJ
 df2 = coerce(df, :class=>Multiclass)
 ```
 """
