@@ -1,7 +1,7 @@
 name = "MLJOpenML"
 uuid = "cbea4545-8c96-4583-ad3a-44078d60d369"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "1.0.0"
+version = "0.1.1"
 
 [deps]
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
