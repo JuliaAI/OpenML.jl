@@ -8,6 +8,8 @@ A package providing integration of [OpenML](https://www.openml.org) with the
 [MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/) machine
 learning framework.
 
+Based entirely on Diego Arenas' original code contribution to MLJBase.jl.
+
 
 ## Installation
 
