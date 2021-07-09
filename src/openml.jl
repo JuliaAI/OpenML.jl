@@ -1,5 +1,7 @@
 using HTTP
 using JSON
+using CSV
+using DataFrames
 
 const API_URL = "https://www.openml.org/api/v1/json"
 
@@ -47,41 +49,31 @@ Receives an `HTTP.Message.response` that has an
 ARFF file format in the `body` of the `Message`.
 """
 function convert_ARFF_to_rowtable(response)
-    data = String(response.body)
-    data2 = split(data, "\n")
-
     featureNames = String[]
     dataTypes = String[]
-    # TODO: make this more performant by anticipating types?
-    named_tuples = [] # `Any` type here bad
-    for line in data2
+    io = IOBuffer(response.body)
+    while true
+        line = String(readuntil(io, 0x0a))
         if length(line) > 0
             if line[1:1] != "%"
                 d = []
                 if occursin("@attribute", lowercase(line))
-                    push!(featureNames, replace(replace(split(line, " ")[2], "'" => ""), "-" => "_"))
-                    push!(dataTypes, split(line, " ")[3])
+                    splitline = split(line)
+                    push!(featureNames, replace(replace(splitline[2], "'" => ""), "-" => "_"))
+                    push!(dataTypes, splitline[3])
                 elseif occursin("@relation", lowercase(line))
                     nothing
                 elseif occursin("@data", lowercase(line))
                     # it means the data starts
-                    nothing
-                else
-                    values = split(line, ",")
-                    for i in eachindex(featureNames)
-                        if lowercase(dataTypes[i]) in ["real","numeric"]
-                            push!(d, featureNames[i] => Meta.parse(values[i]))
-                        else
-                            # all the rest will be considered as String
-                            push!(d, featureNames[i] => values[i])
-                        end
-                    end
-                    push!(named_tuples, (; (Symbol(k) => v for (k,v) in d)...))
+                    break
                 end
             end
         end
     end
-    return identity.(named_tuples) # not performant; see above
+    CSV.read(io, DataFrame,
+             header = featureNames,
+             comment = "%",
+             missingstring = "?")
 end
 
 """
