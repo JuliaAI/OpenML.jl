@@ -257,6 +257,29 @@ function load_List_And_Filter(filters::String; api_key::String = "")
     return nothing
 end
 
+function todf(entry)
+    if length(entry["quality"]) > 0
+        dq = vcat(DataFrame.(entry["quality"])...)
+        dq.id = fill(entry["did"], nrow(dq))
+        dq = unstack(dq, :id, :name, :value)
+    else
+        dq = DataFrame()
+    end
+    hcat(DataFrame([k => entry[k] for k in keys(entry)
+                   if k ∉ ("did", "quality", "file_id", "md5_checksum")]), dq)
+end
+
+"""
+    datasets(filter = ""; api_key = "")
+
+List OpenML datasets. See [`load_List_And_Filter`](@ref) for the format of the filter.
+"""
+function datasets(filter = ""; api_key = "")
+    data = MLJOpenML.load_List_And_Filter(filter; api_key)
+    df = reduce(vcat, todf.(data["data"]["dataset"]), cols = :union)
+    select(df, :id, Not([:id, :format, :version]), :format, :version)
+end
+
 # Flow API
 
 # Task API
