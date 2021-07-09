@@ -263,7 +263,7 @@ function todf(entry)
         dq.id = fill(entry["did"], nrow(dq))
         dq = unstack(dq, :id, :name, :value)
     else
-        dq = DataFrame()
+        dq = DataFrame(id = [entry["did"]])
     end
     hcat(DataFrame([k => entry[k] for k in keys(entry)
                    if k ∉ ("did", "quality", "file_id", "md5_checksum")]), dq)
