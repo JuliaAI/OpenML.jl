@@ -1,7 +1,6 @@
 using HTTP
 using JSON
 using CSV
-using DataFrames
 
 const API_URL = "https://www.openml.org/api/v1/json"
 
@@ -70,7 +69,7 @@ function convert_ARFF_to_rowtable(response)
             end
         end
     end
-    CSV.read(io, DataFrame,
+    CSV.File(io,
              header = featureNames,
              comment = "%",
              missingstring = "?")
