@@ -257,28 +257,45 @@ function load_List_And_Filter(filters::String; api_key::String = "")
     return nothing
 end
 
-function todf(entry)
-    if length(entry["quality"]) > 0
-        dq = vcat(DataFrame.(entry["quality"])...)
-        dq.id = fill(entry["did"], nrow(dq))
-        dq = unstack(dq, :id, :name, :value)
-    else
-        dq = DataFrame(id = [entry["did"]])
-    end
-    hcat(DataFrame([k => entry[k] for k in keys(entry)
-                   if k ∉ ("did", "quality", "file_id", "md5_checksum")]), dq)
-end
+qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
 
 """
-    datasets(filter = ""; api_key = "")
+    list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
 
-List OpenML datasets. See [`load_List_And_Filter`](@ref) for the format of the filter.
+List OpenML list_datasets. See [`load_List_And_Filter`](@ref) for the format of
+the filter. As an alternative `output_format` one can choose other table types,
+like `DataFrame`, if the `DataFrames` package is loaded.
 """
-function datasets(filter = ""; api_key = "")
+function list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
     data = MLJOpenML.load_List_And_Filter(filter; api_key)
-    df = reduce(vcat, todf.(data["data"]["dataset"]), cols = :union)
-    select(df, :id, Not([:id, :format, :version]), :format, :version)
+    datasets = data["data"]["dataset"]
+    qualities = Symbol.(union(vcat([vcat(qualitynames.(entry["quality"])...) for entry in datasets]...)))
+    result = merge((id = Int[], name = String[], status = String[]),
+                   NamedTuple{tuple(qualities...)}(ntuple(i -> Union{Missing, Int}[], length(qualities))))
+    for entry in datasets
+        push!(result.id, entry["did"])
+        push!(result.name, entry["name"])
+        push!(result.status, entry["status"])
+        for quality in entry["quality"]
+            push!(getproperty(result, Symbol(quality["name"])),
+                  Meta.parse(quality["value"]))
+        end
+        for quality in qualities
+            if length(getproperty(result, quality)) < length(result.id)
+                push!(getproperty(result, quality), missing)
+            end
+        end
+    end
+    output_format(result)
 end
+
+"""
+    describe_dataset(id)
+
+Load and show the OpenML description of the data set `id`.
+Use [`list_datasets`](@ref) to browse available data sets.
+"""
+describe_dataset(id) =  Text(load_Dataset_Description(id)["data_set_description"]["description"])
 
 # Flow API
 
