@@ -262,9 +262,18 @@ qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
 """
     list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
 
-List OpenML list_datasets. See [`load_List_And_Filter`](@ref) for the format of
+List OpenML datasets. See [`load_List_And_Filter`](@ref) for the format of
 the filter. As an alternative `output_format` one can choose other table types,
 like `DataFrame`, if the `DataFrames` package is loaded.
+
+# Examples
+```
+julia> using DataFrames
+
+julia> ds = MLJOpenML.list_datasets("/tag/OpenML100/", output_format = DataFrame)
+
+julia> sort!(ds, :NumberOfFeatures)
+```
 """
 function list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
     data = MLJOpenML.load_List_And_Filter(filter; api_key)
@@ -294,6 +303,28 @@ end
 
 Load and show the OpenML description of the data set `id`.
 Use [`list_datasets`](@ref) to browse available data sets.
+
+# Examples
+```
+julia> MLJOpenML.describe_dataset(6)
+**Author**: David J. Slate
+**Source**: [UCI](https://archive.ics.uci.edu/ml/datasets/Letter+Recognition) - 01-01-1991
+**Please cite**: P. W. Frey and D. J. Slate. "Letter Recognition Using Holland-style Adaptive Classifiers". Machine Learning 6(2), 1991
+
+1. TITLE:
+  Letter Image Recognition Data
+
+    The objective is to identify each of a large number of black-and-white
+    rectangular pixel displays as one of the 26 capital letters in the English
+    alphabet.  The character images were based on 20 different fonts and each
+    letter within these 20 fonts was randomly distorted to produce a file of
+    20,000 unique stimuli.  Each stimulus was converted into 16 primitive
+    numerical attributes (statistical moments and edge counts) which were then
+    scaled to fit into a range of integer values from 0 through 15.  We
+    typically train on the first 16000 items and then use the resulting model
+    to predict the letter category for the remaining 4000.  See the article
+    cited above for more details.
+```
 """
 describe_dataset(id) =  Text(load_Dataset_Description(id)["data_set_description"]["description"])
 
