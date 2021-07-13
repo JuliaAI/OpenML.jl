@@ -51,8 +51,7 @@ function convert_ARFF_to_rowtable(response)
     featureNames = String[]
     dataTypes = String[]
     io = IOBuffer(response.body)
-    while true
-        line = String(readuntil(io, 0x0a))
+    for line in eachline(io)
         if length(line) > 0
             if line[1:1] != "%"
                 d = []
