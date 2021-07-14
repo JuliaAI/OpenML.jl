@@ -42,6 +42,24 @@ function load_Dataset_Description(id::Int; api_key::String="")
     return nothing
 end
 
+function typemismatch_warning(is, shouldbe, name)
+    @warn "Inferred $is instead of $shouldbe for feature $name.
+         Please coerce to the desired type manually."
+end
+function check_type(is::Type{<:Union{Missing, <:Number}}, shouldbe, name)
+    if lowercase(shouldbe) ∉ ("numeric", "real", "integer")
+        typemismatch_warning(is, shouldbe, name)
+    end
+end
+function check_type(is::Type{<:Union{Missing, <:AbstractString}}, shouldbe, name)
+    if lowercase(shouldbe) ∈ ("numeric", "real", "integer")
+        typemismatch_warning(is, shouldbe, name)
+    end
+end
+function check_type(is::Type{Missing}, shouldbe, name)
+    typemismatch_warning(is, shouldbe, name)
+end
+
 """
 Returns a Vector of NamedTuples.
 Receives an `HTTP.Message.response` that has an
@@ -58,7 +76,7 @@ function convert_ARFF_to_rowtable(response)
                 if occursin("@attribute", lowercase(line))
                     splitline = split(line)
                     push!(featureNames, replace(replace(splitline[2], "'" => ""), "-" => "_"))
-                    push!(dataTypes, splitline[3])
+                    push!(dataTypes, join(splitline[3:end], ""))
                 elseif occursin("@relation", lowercase(line))
                     nothing
                 elseif occursin("@data", lowercase(line))
@@ -68,10 +86,12 @@ function convert_ARFF_to_rowtable(response)
             end
         end
     end
-    CSV.File(io,
-             header = featureNames,
-             comment = "%",
-             missingstring = "?")
+    result = CSV.File(io,
+                      header = featureNames,
+                      comment = "%",
+                      missingstring = "?")
+    check_type.(CSV.gettypes(result), dataTypes, featureNames)
+    return result
 end
 
 """
