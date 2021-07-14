@@ -277,7 +277,7 @@ julia> sort!(ds, :NumberOfFeatures)
 ```
 """
 function list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
-    data = MLJOpenML.load_List_And_Filter(filter; api_key)
+    data = MLJOpenML.load_List_And_Filter(filter; api_key = api_key)
     datasets = data["data"]["dataset"]
     qualities = Symbol.(union(vcat([vcat(qualitynames.(entry["quality"])...) for entry in datasets]...)))
     result = merge((id = Int[], name = String[], status = String[]),
