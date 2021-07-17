@@ -29,10 +29,20 @@ rowtable = MLJOpenML.load(61)
 
 Convert to a `DataFrame`:
 
-```
+```julia
 Pkg.add("DataFrames")
 using DataFrames
 df = DataFrame(rowtable)
+```
+
+To browse datasets use
+
+```julia
+using DataFrames
+ds = MLJOpenML.list_datasets(output_format = DataFrame)
+MLJOpenML.describe_dataset(6)
+MLJOpenML.list_tags() # lists valid tags
+ds100 = MLJOpenML.list_datasets(tag = "OpenML100", output_format = DataFrame)
 ```
 
 ## Documentation

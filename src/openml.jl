@@ -206,33 +206,9 @@ function load_Data_Qualities(id::Int; api_key::String = "")
 end
 
 """
-List datasets, possibly filtered by a range of properties.
-Any number of properties can be combined by listing them one after
-the other in the
-form '/data/list/{filter}/{value}/{filter}/{value}/...'
-Returns an array with all datasets that match the constraints.
+    load_List_And_Filter(filters; api_key = "")
 
-Any combination of these filters /limit/{limit}/offset/{offset} -
-returns only {limit} results starting from result number {offset}.
-Useful for paginating results. With /limit/5/offset/10,
-    results 11..15 will be returned.
-
-Both limit and offset need to be specified.
-/status/{status} - returns only datasets with a given status,
-either 'active', 'deactivated', or 'in_preparation'.
-/tag/{tag} - returns only datasets tagged with the given tag.
-/{data_quality}/{range} - returns only tasks for which the
-underlying datasets have certain qualities.
-{data_quality} can be data_id, data_name, data_version, number_instances,
-number_features, number_classes, number_missing_values. {range} can be a
-specific value or a range in the form 'low..high'.
-Multiple qualities can be combined, as in
-'number_instances/0..50/number_features/0..10'.
-
-- 370 - Illegal filter specified.
-- 371 - Filter values/ranges not properly specified.
-- 372 - No results. There where no matches for the given constraints.
-- 373 - Can not specify an offset without a limit.
+See [OpenML API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
 """
 function load_List_And_Filter(filters::String; api_key::String = "")
     if api_key == ""
@@ -261,23 +237,35 @@ end
 qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
 
 """
-    list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
+    list_datasets(; tag = nothing, filters = "" api_key = "", output_format = NamedTuple)
 
-List OpenML datasets. See [`load_List_And_Filter`](@ref) for the format of
-the filter. As an alternative `output_format` one can choose other table types,
-like `DataFrame`, if the `DataFrames` package is loaded.
+Lists all active OpenML datasets, if `tag = nothing` (default).
+To list only datasets with a given tag, choose one of the tags in [`list_tags()`](@ref).
+An alternative `output_format` can be chosen, e.g. `DataFrame`, if the
+`DataFrames` package is loaded. Choose `filters` as specified in the official
+[openml API](https://www.openml.org/api_docs#!/data/get_data_list_filters)
+(caveat: this function does not check for valid filters).
 
 # Examples
 ```
 julia> using DataFrames
 
-julia> ds = MLJOpenML.list_datasets("/tag/OpenML100/", output_format = DataFrame)
+julia> ds = MLJOpenML.list_datasets(tag = "OpenML100", output_format = DataFrame)
 
 julia> sort!(ds, :NumberOfFeatures)
 ```
 """
-function list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
-    data = MLJOpenML.load_List_And_Filter(filter; api_key = api_key)
+function list_datasets(; tag = nothing, filters = "",
+                         api_key = "", output_format = NamedTuple)
+    if tag !== nothing
+        if is_valid_tag(tag)
+            filters *= "/tag/$tag"
+        else
+            @warn "$tag is not a valid tag. See `list_tags()` for a list of tags."
+            return
+        end
+    end
+    data = MLJOpenML.load_List_And_Filter(filters; api_key = api_key)
     datasets = data["data"]["dataset"]
     qualities = Symbol.(union(vcat([vcat(qualitynames.(entry["quality"])...) for entry in datasets]...)))
     result = merge((id = Int[], name = String[], status = String[]),
@@ -297,6 +285,24 @@ function list_datasets(filter = ""; api_key = "", output_format = NamedTuple)
         end
     end
     output_format(result)
+end
+
+is_valid_tag(tag::String) = tag ∈ list_tags()
+is_valid_tag(tag) = false
+
+"""
+    list_tags()
+
+List all available tags.
+"""
+function list_tags()
+    url = string(API_URL, "/data/tag/list")
+    try
+        r = HTTP.request("GET", url)
+        return JSON.parse(String(r.body))["data_tag_list"]["tag"]
+    catch
+        return nothing
+    end
 end
 
 """
