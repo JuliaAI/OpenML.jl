@@ -242,20 +242,35 @@ qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
 Lists all active OpenML datasets, if `tag = nothing` (default).
 To list only datasets with a given tag, choose one of the tags in [`list_tags()`](@ref).
 An alternative `output_format` can be chosen, e.g. `DataFrame`, if the
-`DataFrames` package is loaded. Choose `filters` as specified in the official
-[openml API](https://www.openml.org/api_docs#!/data/get_data_list_filters)
-(caveat: this function does not check for valid filters).
+`DataFrames` package is loaded. 
+
+A filter is a string of data_quality/range or data_quality/value
+pairs, concatenated using `/`, such as
+
+```julia
+    filter = "filters="number_features/10/number_instances/500..10000"
+```
+
+The allowed data qualities include `tag`, `status`, `limit`, `offset`,
+`data_id`, `data_name`, `data_version`, `uploader`,
+`number_instances`, `number_features`, `number_classes`,
+`number_missing_values`.
+
+For more on the format and effect of `filters` see [openml
+API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
 
 # Examples
 ```
 julia> using DataFrames
 
-julia> ds = MLJOpenML.list_datasets(tag = "OpenML100", output_format = DataFrame)
+julia> ds = MLJOpenML.list_datasets(tag = "OpenML100", 
+                                    filter = "number_instances/100..1000/number_features/1..10",
+                                    output_format = DataFrame)
 
 julia> sort!(ds, :NumberOfFeatures)
 ```
 """
-function list_datasets(; tag = nothing, filters = "",
+function list_datasets(; tag = nothing, filter = "", filters=filter, 
                          api_key = "", output_format = NamedTuple)
     if tag !== nothing
         if is_valid_tag(tag)

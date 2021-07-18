@@ -35,14 +35,16 @@ using DataFrames
 df = DataFrame(rowtable)
 ```
 
-To browse datasets use
+Browsing and filtering datasets:
 
 ```julia
 using DataFrames
 ds = MLJOpenML.list_datasets(output_format = DataFrame)
 MLJOpenML.describe_dataset(6)
 MLJOpenML.list_tags() # lists valid tags
-ds100 = MLJOpenML.list_datasets(tag = "OpenML100", output_format = DataFrame)
+ds = MLJOpenML.list_datasets(tag = "OpenML100", 
+                             filter = "number_instances/100..1000/number_features/1..10",
+                             output_format = DataFrame)
 ```
 
 ## Documentation
