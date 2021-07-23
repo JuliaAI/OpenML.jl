@@ -5,17 +5,15 @@ version = "1.0.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 
 [compat]
+CSV = "0.8"
 HTTP = "^0.8, 0.9"
 JSON = "^0.21"
-DataFrames = "1"
-CSV = "0.8"
 julia = "1"
-
 
 [extras]
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"

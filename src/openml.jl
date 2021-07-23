@@ -1,6 +1,7 @@
 using HTTP
 using JSON
 using CSV
+import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce
 
 const API_URL = "https://www.openml.org/api/v1/json"
 
@@ -42,22 +43,22 @@ function load_Dataset_Description(id::Int; api_key::String="")
     return nothing
 end
 
-function typemismatch_warning(is, shouldbe, name)
-    @warn "Inferred $is instead of $shouldbe for feature $name.
-         Please coerce to the desired type manually."
+function _scitype(openml, inferred)
+    (openml == "real" || (openml == "numeric" && inferred <: Real)) && return Continuous
+    (openml == "integer" || (openml == "numeric" && inferred <: Integer)) && return Count
+    openml == "string" && return Textual
+    openml[1] == '{' && return Multiclass
+    error("Cannot infer the scientific type for OpenML metadata $openml and inferred type $inferred.")
 end
-function check_type(is::Type{<:Union{Missing, <:Number}}, shouldbe, name)
-    if lowercase(shouldbe) ∉ ("numeric", "real", "integer")
-        typemismatch_warning(is, shouldbe, name)
+
+function check_type(is, shouldbe, name)
+    if (shouldbe == "numeric" && !(is <: Number)) ||
+       (shouldbe == "integer" && !(is <: Integer)) ||
+       (shouldbe == "real" && !(is <: Real)) ||
+       (shouldbe == "string" && !(is <: AbstractString)) ||
+       shouldbe[1] == '{'
+        @info "Inferred type `$is` does not match the OpenML metadata `$shouldbe` for feature `$name`. Please coerce to the desired type manually, or specify `parser = :openml` or `parser = :auto`. To suppress this message, specify `verbosity = 0`."
     end
-end
-function check_type(is::Type{<:Union{Missing, <:AbstractString}}, shouldbe, name)
-    if lowercase(shouldbe) ∈ ("numeric", "real", "integer")
-        typemismatch_warning(is, shouldbe, name)
-    end
-end
-function check_type(is::Type{Missing}, shouldbe, name)
-    typemismatch_warning(is, shouldbe, name)
 end
 
 """
@@ -65,7 +66,7 @@ Returns a Vector of NamedTuples.
 Receives an `HTTP.Message.response` that has an
 ARFF file format in the `body` of the `Message`.
 """
-function convert_ARFF_to_rowtable(response)
+function convert_ARFF_to_rowtable(response, verbosity, parser)
     featureNames = String[]
     dataTypes = String[]
     io = IOBuffer(response.body)
@@ -76,7 +77,7 @@ function convert_ARFF_to_rowtable(response)
                 if occursin("@attribute", lowercase(line))
                     splitline = split(line)
                     push!(featureNames, replace(replace(splitline[2], "'" => ""), "-" => "_"))
-                    push!(dataTypes, join(splitline[3:end], ""))
+                    push!(dataTypes, lowercase(join(splitline[3:end], "")))
                 elseif occursin("@relation", lowercase(line))
                     nothing
                 elseif occursin("@data", lowercase(line))
@@ -90,35 +91,54 @@ function convert_ARFF_to_rowtable(response)
                       header = featureNames,
                       comment = "%",
                       missingstring = "?")
-    check_type.(CSV.gettypes(result), dataTypes, featureNames)
+    inferred = CSV.gettypes(result)
+    result = CSV.Tables.dictcolumntable(result)
+    if parser == :csv && verbosity > 0
+        check_type.(inferred, dataTypes, featureNames)
+    else
+        result = coerce(result, [Symbol(n) => _scitype(t, ti)
+                                 for (n, t, ti) in zip(featureNames, dataTypes, inferred)]...)
+    end
     return result
 end
 
 """
-    MLJOpenML.load(id)
+    MLJOpenML.load(id; verbosity = 1, parser = :auto)
 
-Load the OpenML dataset with specified `id`, from those listed on the
-[OpenML site](https://www.openml.org/search?type=data).
+Load the OpenML dataset with specified `id`, from those listed by
+[`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
+If `parser = :csv` the types of the columns are automatically detected by the
+`CSV.read` function. A message is shown, if `verbosity > 0` and the detected
+type does not match the OpenML metadata. If `parser = :openml` the OpenML metadata
+is used to `coerce` the columns to scientific types according to the rules:
+| metadata | inferred type | scientific type |
+|----------|---------------|-----------------|
+|numeric   | <: Real       | Continuous      |
+|numeric   | <: Integer    | Count           |
+|real      | <: Any        | Continuous      |
+|integer   | <: Any        | Count           |
+|string    | <: Any        | Textual         |
+|{ANYTHING}| <: Any        | Multiclass      |
 
-Returns a "row table", i.e., a `Vector` of identically typed
-`NamedTuple`s. A row table is compatible with the
-[Tables.jl](https://github.com/JuliaData/Tables.jl) interface and can
-therefore be readily converted to other compatible formats. For
-example:
+See [here](https://waikato.github.io/weka-wiki/formats_and_processing/arff_developer/)
+for info on the OpenML metadata.
+
+Caveat: `parser = :openml` can be much slower than `parser = csv` for data with many features (columns).
+
+Returns a table.
+
+# Examples
 
 ```julia
 using DataFrames
-rowtable = MLJOpenML.load(61);
-df = DataFrame(rowtable);
-
-using MLJ
-df2 = coerce(df, :class=>Multiclass)
+table = MLJOpenML.load(61);
+df = DataFrame(table);
 ```
 """
-function load(id::Int)
+function load(id::Int; verbosity = 1, parser = :openml)
     response = load_Dataset_Description(id)
     arff_file = HTTP.request("GET", response["data_set_description"]["url"])
-    return convert_ARFF_to_rowtable(arff_file)
+    return convert_ARFF_to_rowtable(arff_file, verbosity, parser)
 end
 
 
