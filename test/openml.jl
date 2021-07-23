@@ -23,8 +23,8 @@ end
 
 @testset "ARFF file conversion to NamedTuples" begin
     @test isempty(ntp_test) == false
-    @test length(ntp_test) == 150
-    @test length(ntp_test[1]) == 5
+    @test length(ntp_test[1]) == 150
+    @test length(ntp_test) == 5
 end
 
 @testset "data api functions" begin
