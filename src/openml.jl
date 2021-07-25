@@ -44,21 +44,42 @@ function load_Dataset_Description(id::Int; api_key::String="")
     return nothing
 end
 
-function _scitype(openml, inferred)
-    (openml == "real" || (openml == "numeric" && inferred <: Real)) && return Continuous
-    (openml == "integer" || (openml == "numeric" && inferred <: Integer)) && return Count
-    openml == "string" && return Textual
-    openml[1] == '{' && return Multiclass
+function _parse(openml, val)
+    val == "?" && return missing
+    openml ∈ ("real", "numeric", "integer") && return Meta.parse(val)
+    return val
+end
+
+emptyvec(::Type{String}, length) = fill("", length)
+emptyvec(T::Any, length) = zeros(T, length)
+function _vec(idxs, vals::AbstractVector{<:Union{Missing, T}}, length) where T
+    result = emptyvec(T, length)
+    for k in eachindex(idxs)
+        result[idxs[k]] = vals[k]
+    end
+    result
+end
+
+_scitype(scitype, ::DataType) = scitype
+_scitype(scitype, ::Type{Union{Missing, T}}) where T = Union{Missing, scitype}
+function scitype(openml, inferred)
+    (openml == "real" || (openml == "numeric" && inferred <: Union{Missing, <:Real})) && return _scitype(Continuous, inferred)
+    (openml == "integer" || (openml == "numeric" && inferred <: Union{Missing <: Integer})) && return _scitype(Count, inferred)
+    openml == "string" && return _scitype(Textual, inferred)
+    openml[1] == '{' && return _scitype(Multiclass, inferred)
     error("Cannot infer the scientific type for OpenML metadata $openml and inferred type $inferred.")
 end
 
-function check_type(is, shouldbe, name)
-    if (shouldbe == "numeric" && !(is <: Number)) ||
-       (shouldbe == "integer" && !(is <: Integer)) ||
-       (shouldbe == "real" && !(is <: Real)) ||
-       (shouldbe == "string" && !(is <: AbstractString)) ||
-       shouldbe[1] == '{'
-        @info "Inferred type `$is` does not match the OpenML metadata `$shouldbe` for feature `$name`. Please coerce to the desired type manually, or specify `parser = :openml` or `parser = :auto`. To suppress this message, specify `verbosity = 0`."
+function needs_coercion(is, shouldbe, name, verbosity)
+    if (shouldbe == "numeric" && !(is <: Union{Missing, <:Number})) ||
+       (shouldbe == "integer" && !(is <: Union{Missing, <:Integer})) ||
+       (shouldbe == "real" && !(is <: Union{Missing, <:Real})) ||
+       (shouldbe == "string" && !(is <: Union{Missing, <:AbstractString})) ||
+        shouldbe[1] == '{'
+        verbosity && @info "Inferred type `$is` does not match the OpenML metadata `$shouldbe` for feature `$name`. Please coerce to the desired type manually, or specify `parser = :openml` or `parser = :auto`. To suppress this message, specify `verbosity = 0`."
+        true
+    else
+        false
     end
 end
 
@@ -67,8 +88,8 @@ Returns a Vector of NamedTuples.
 Receives an `HTTP.Message.response` that has an
 ARFF file format in the `body` of the `Message`.
 """
-function convert_ARFF_to_rowtable(response, verbosity, parser)
-    featureNames = String[]
+function convert_ARFF_to_rowtable(response, verbosity, parser; kwargs...)
+    featureNames = Symbol[]
     dataTypes = String[]
     io = IOBuffer(response.body)
     for line in eachline(io)
@@ -77,7 +98,7 @@ function convert_ARFF_to_rowtable(response, verbosity, parser)
                 d = []
                 if occursin("@attribute", lowercase(line))
                     splitline = split(line)
-                    push!(featureNames, replace(replace(splitline[2], "'" => ""), "-" => "_"))
+                    push!(featureNames, Symbol(splitline[2]))
                     push!(dataTypes, lowercase(join(splitline[3:end], "")))
                 elseif occursin("@relation", lowercase(line))
                     nothing
@@ -88,23 +109,59 @@ function convert_ARFF_to_rowtable(response, verbosity, parser)
             end
         end
     end
-    result = CSV.File(io,
-                      header = featureNames,
-                      comment = "%",
-                      missingstring = "?")
-    inferred = CSV.gettypes(result)
-    result = CSV.Tables.dictcolumntable(result)
-    if parser == :csv && verbosity > 0
-        check_type.(inferred, dataTypes, featureNames)
+    while peek(io) ∈ (0x0a, 0x25) # skip empty new lines and comments
+        readline(io)
+    end
+    if peek(io) == 0x7b # sparse ARFF file
+        tmp = [(Int[], Union{Missing, type ∈ ("numeric", "real") ? Float64 : type == "integer" ? Int :  String}[]) for type in dataTypes]
+        i = 0
+        for line in eachline(io)
+            if line[1:1] != "%"
+                splitline = split(line[2:end-1], ",")
+                splitline == [""] && continue
+                i += 1
+                for entry in splitline
+                    idx_string, val = split(entry)
+                    idx = parse(Int, idx_string) + 1
+                    push!(tmp[idx][1], i)
+                    push!(tmp[idx][2], _parse(dataTypes[idx], val))
+                end
+            end
+        end
+        tmpd = Dict(featureNames[k] => _vec(tmp[k][1], identity.(tmp[k][2]), i)
+                    for k in eachindex(featureNames))
+        inferred = [eltype(tmpd[k]) for k in featureNames]
+        result = CSV.Tables.DictColumnTable(CSV.Tables.Schema(featureNames, inferred),
+                                            tmpd)
     else
-        result = coerce(result, [Symbol(n) => _scitype(t, ti)
-                                 for (n, t, ti) in zip(featureNames, dataTypes, inferred)]...)
+        result = CSV.File(io;
+                          header = featureNames,
+                          comment = "%",
+                          missingstring = "?",
+                          quotechar = ''',
+                          escapechar = '\\',
+                          kwargs...)
+        inferred = CSV.gettypes(result)
+        result = CSV.Tables.dictcolumntable(result)
+    end
+    if length(featureNames) > 2000
+        @info "Parser $parser is very slow for more than 2000 features. Returning result of csv parser."
+        parser = :csv
+    end
+    idxs = needs_coercion.(inferred, dataTypes, featureNames, parser == :csv && verbosity > 0)
+    if parser ∈ (:openml, :auto)
+        result = coerce(result, [name => scitype(type, inferred)
+                                 for (name, type, inferred) in
+                                 zip(featureNames[idxs], dataTypes[idxs], inferred[idxs])]...)
+    end
+    if parser == :auto
+        result = coerce(result, autotype(result))
     end
     return result
 end
 
 """
-    MLJOpenML.load(id; verbosity = 1, parser = :auto)
+    MLJOpenML.load(id; verbosity = 1, parser = :csv, kwargs...)
 
 Load the OpenML dataset with specified `id`, from those listed by
 [`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
@@ -124,7 +181,11 @@ is used to `coerce` the columns to scientific types according to the rules:
 See [here](https://waikato.github.io/weka-wiki/formats_and_processing/arff_developer/)
 for info on the OpenML metadata.
 
-Caveat: `parser = :openml` can be much slower than `parser = csv` for data with many features (columns).
+With `parser = :auto`, the `autotype`'s of the output of `parser = :openml` are
+used to coerce the data further.
+
+For data with more than 2000 features (columns) `parser = csv` is used always,
+because `parser = :openml` can be much slower.
 
 Returns a table.
 
@@ -136,10 +197,10 @@ table = MLJOpenML.load(61);
 df = DataFrame(table);
 ```
 """
-function load(id::Int; verbosity = 1, parser = :openml)
+function load(id::Int; verbosity = 1, parser = :csv, kwargs...)
     response = load_Dataset_Description(id)
     arff_file = HTTP.request("GET", response["data_set_description"]["url"])
-    return convert_ARFF_to_rowtable(arff_file, verbosity, parser)
+    return convert_ARFF_to_rowtable(arff_file, verbosity, parser; kwargs...)
 end
 
 
