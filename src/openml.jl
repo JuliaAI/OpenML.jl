@@ -144,7 +144,7 @@ function convert_ARFF_to_rowtable(response, verbosity, parser; kwargs...)
         inferred = CSV.gettypes(result)
         result = CSV.Tables.dictcolumntable(result)
     end
-    if length(featureNames) > 2000
+    if parser != :csv && length(featureNames) > 2000
         @info "Parser $parser is very slow for more than 2000 features. Returning result of csv parser."
         parser = :csv
     end
@@ -184,7 +184,7 @@ for info on the OpenML metadata.
 With `parser = :auto`, the `autotype`'s of the output of `parser = :openml` are
 used to coerce the data further.
 
-For data with more than 2000 features (columns) `parser = csv` is used always,
+For data with more than 2000 features (columns) `parser = :csv` is used always,
 because `parser = :openml` can be much slower.
 
 Returns a table.
