@@ -1,7 +1,7 @@
 name = "MLJOpenML"
 uuid = "cbea4545-8c96-4583-ad3a-44078d60d369"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "1.0.0"
+version = "1.1.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
