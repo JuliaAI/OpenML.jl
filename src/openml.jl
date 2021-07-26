@@ -11,10 +11,10 @@ const API_URL = "https://www.openml.org/api/v1/json"
 # https://github.com/openml/OpenML/tree/master/openml_OS/views/pages/api_new/v1/xsd
 # https://www.openml.org/api_docs#!/data/get_data_id
 
-# To do:
-# - Save the file in a local folder
-# - Check downloaded files in local folder before downloading it again
-# - Use local stored file whenever possible
+# TODO:
+# - Use e.g. DataDeps to cache data locally
+# - Put the ARFF parser to a separate package or use ARFFFiles when
+#   https://github.com/cjdoris/ARFFFiles.jl/issues/4 is fixed.
 
 """
 Returns information about a dataset. The information includes the name,
@@ -88,7 +88,7 @@ Returns a Vector of NamedTuples.
 Receives an `HTTP.Message.response` that has an
 ARFF file format in the `body` of the `Message`.
 """
-function convert_ARFF_to_rowtable(response, verbosity, parser; kwargs...)
+function convert_ARFF_to_columntable(response, verbosity, parser; kwargs...)
     featureNames = Symbol[]
     dataTypes = String[]
     io = IOBuffer(response.body)
@@ -109,10 +109,10 @@ function convert_ARFF_to_rowtable(response, verbosity, parser; kwargs...)
             end
         end
     end
-    while peek(io) ∈ (0x0a, 0x25) # skip empty new lines and comments
+    while io.data[io.ptr] ∈ (0x0a, 0x25) # skip empty new lines and comments
         readline(io)
     end
-    if peek(io) == 0x7b # sparse ARFF file
+    if io.data[io.ptr] == 0x7b # sparse ARFF file
         tmp = [(Int[], Union{Missing, type ∈ ("numeric", "real") ? Float64 : type == "integer" ? Int :  String}[]) for type in dataTypes]
         i = 0
         for line in eachline(io)
@@ -200,7 +200,7 @@ df = DataFrame(table);
 function load(id::Int; verbosity = 1, parser = :csv, kwargs...)
     response = load_Dataset_Description(id)
     arff_file = HTTP.request("GET", response["data_set_description"]["url"])
-    return convert_ARFF_to_rowtable(arff_file, verbosity, parser; kwargs...)
+    return convert_ARFF_to_columntable(arff_file, verbosity, parser; kwargs...)
 end
 
 
