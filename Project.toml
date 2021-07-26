@@ -4,11 +4,14 @@ authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
 version = "1.0.0"
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 
 [compat]
+CSV = "0.8"
 HTTP = "^0.8, 0.9"
 JSON = "^0.21"
 julia = "1"
