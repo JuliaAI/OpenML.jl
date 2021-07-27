@@ -169,6 +169,7 @@ If `parser = :csv` the types of the columns are automatically detected by the
 `CSV.read` function. A message is shown, if `verbosity > 0` and the detected
 type does not match the OpenML metadata. If `parser = :openml` the OpenML metadata
 is used to `coerce` the columns to scientific types according to the rules:
+
 | metadata | inferred type | scientific type |
 |----------|---------------|-----------------|
 |numeric   | <: Real       | Continuous      |
@@ -186,6 +187,8 @@ used to coerce the data further.
 
 For data with more than 2000 features (columns) `parser = :csv` is used always,
 because `parser = :openml` can be much slower.
+
+Extra `kwargs` are passed to the CSV parser, `CSV.File(...)`. 
 
 Returns a table.
 
