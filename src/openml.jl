@@ -1,7 +1,7 @@
 using HTTP
 using JSON
 using CSV
-import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce
+import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce, autotype
 using Markdown
 
 const API_URL = "https://www.openml.org/api/v1/json"
