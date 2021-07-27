@@ -188,7 +188,7 @@ used to coerce the data further.
 For data with more than 2000 features (columns) `parser = :csv` is used always,
 because `parser = :openml` can be much slower.
 
-Extra `kwargs` are passed to the CSV parser, `CSV.File(...)`. 
+Extra `kwargs` are passed to the CSV parser, `CSV.File(...)`.
 
 Returns a table.
 
@@ -336,13 +336,13 @@ qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
 Lists all active OpenML datasets, if `tag = nothing` (default).
 To list only datasets with a given tag, choose one of the tags in [`list_tags()`](@ref).
 An alternative `output_format` can be chosen, e.g. `DataFrame`, if the
-`DataFrames` package is loaded. 
+`DataFrames` package is loaded.
 
-A filter is a string of data_quality/range or data_quality/value
+A filter is a string of `<data quality>/<range>` or `<data quality>/<value>`
 pairs, concatenated using `/`, such as
 
 ```julia
-    filter = "filters="number_features/10/number_instances/500..10000"
+    filter = "number_features/10/number_instances/500..10000"
 ```
 
 The allowed data qualities include `tag`, `status`, `limit`, `offset`,
@@ -350,21 +350,23 @@ The allowed data qualities include `tag`, `status`, `limit`, `offset`,
 `number_instances`, `number_features`, `number_classes`,
 `number_missing_values`.
 
-For more on the format and effect of `filters` see [openml
+For more on the format and effect of `filters` refer to the [openml
 API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
 
 # Examples
 ```
 julia> using DataFrames
 
-julia> ds = MLJOpenML.list_datasets(tag = "OpenML100", 
-                                    filter = "number_instances/100..1000/number_features/1..10",
-                                    output_format = DataFrame)
+julia> ds = MLJOpenML.list_datasets(
+               tag = "OpenML100",
+               filter = "number_instances/100..1000/number_features/1..10",
+               output_format = DataFrame
+)
 
 julia> sort!(ds, :NumberOfFeatures)
 ```
 """
-function list_datasets(; tag = nothing, filter = "", filters=filter, 
+function list_datasets(; tag = nothing, filter = "", filters=filter,
                          api_key = "", output_format = NamedTuple)
     if tag !== nothing
         if is_valid_tag(tag)
