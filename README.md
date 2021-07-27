@@ -24,7 +24,7 @@ Load the iris data set from OpenML:
 
 ```julia
 using MLJOpenML
-rowtable = MLJOpenML.load(61)
+table = MLJOpenML.load(61) # a CSV.File object
 ```
 
 Convert to a `DataFrame`:
@@ -32,7 +32,7 @@ Convert to a `DataFrame`:
 ```julia
 Pkg.add("DataFrames")
 using DataFrames
-df = DataFrame(rowtable)
+df = DataFrame(table)
 ```
 
 Browsing and filtering datasets:
