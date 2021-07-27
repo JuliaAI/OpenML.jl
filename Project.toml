@@ -12,8 +12,9 @@ ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 
 [compat]
 CSV = "0.8"
-HTTP = "^0.8, 0.9"
-JSON = "^0.21"
+HTTP = "0.8, 0.9"
+JSON = "0.21"
+ScientificTypes = "2"
 julia = "1"
 
 [extras]
