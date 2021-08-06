@@ -45,10 +45,13 @@ function load_Dataset_Description(id::Int; api_key::String="")
 end
 
 """
-    MLJOpenML.load(id; verbosity = 1, parser = :csv, kwargs...)
+    MLJOpenML.load(id; parser = :arff)
 
 Load the OpenML dataset with specified `id`, from those listed by
 [`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
+With `parser = :arff` (default) the ARFFFiles.jl parser is used.
+With `parser = :auto` the output of the ARFFFiles parser is coerced to
+automatically detected scientific types.
 
 Returns a table.
 
@@ -60,10 +63,15 @@ table = MLJOpenML.load(61);
 df = DataFrame(table);
 ```
 """
-function load(id::Int; verbosity = 1, parser = :csv, kwargs...)
+function load(id::Int; parser = :arff)
     response = load_Dataset_Description(id)
     arff_file = HTTP.request("GET", response["data_set_description"]["url"])
-    return ARFFFiles.load(IOBuffer(arff_file.body))
+    data = ARFFFiles.load(IOBuffer(arff_file.body))
+    if parser == :auto
+        return coerce(data, autotype(data))
+    else
+        return data
+    end
 end
 
 

@@ -1,7 +1,7 @@
 name = "MLJOpenML"
 uuid = "cbea4545-8c96-4583-ad3a-44078d60d369"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "1.1.0"
+version = "2.0.0"
 
 [deps]
 ARFFFiles = "da404889-ca92-49ff-9e8b-0aa6b4d38dc8"
