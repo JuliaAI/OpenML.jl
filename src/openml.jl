@@ -1,5 +1,8 @@
 using HTTP
 using JSON
+import ARFFFiles
+import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce, autotype
+using Markdown
 
 const API_URL = "https://www.openml.org/api/v1/json"
 
@@ -8,10 +11,10 @@ const API_URL = "https://www.openml.org/api/v1/json"
 # https://github.com/openml/OpenML/tree/master/openml_OS/views/pages/api_new/v1/xsd
 # https://www.openml.org/api_docs#!/data/get_data_id
 
-# To do:
-# - Save the file in a local folder
-# - Check downloaded files in local folder before downloading it again
-# - Use local stored file whenever possible
+# TODO:
+# - Use e.g. DataDeps to cache data locally
+# - Put the ARFF parser to a separate package or use ARFFFiles when
+#   https://github.com/cjdoris/ARFFFiles.jl/issues/4 is fixed.
 
 """
 Returns information about a dataset. The information includes the name,
@@ -42,73 +45,33 @@ function load_Dataset_Description(id::Int; api_key::String="")
 end
 
 """
-Returns a Vector of NamedTuples.
-Receives an `HTTP.Message.response` that has an
-ARFF file format in the `body` of the `Message`.
-"""
-function convert_ARFF_to_rowtable(response)
-    data = String(response.body)
-    data2 = split(data, "\n")
+    MLJOpenML.load(id; parser = :arff)
 
-    featureNames = String[]
-    dataTypes = String[]
-    # TODO: make this more performant by anticipating types?
-    named_tuples = [] # `Any` type here bad
-    for line in data2
-        if length(line) > 0
-            if line[1:1] != "%"
-                d = []
-                if occursin("@attribute", lowercase(line))
-                    push!(featureNames, replace(replace(split(line, " ")[2], "'" => ""), "-" => "_"))
-                    push!(dataTypes, split(line, " ")[3])
-                elseif occursin("@relation", lowercase(line))
-                    nothing
-                elseif occursin("@data", lowercase(line))
-                    # it means the data starts
-                    nothing
-                else
-                    values = split(line, ",")
-                    for i in eachindex(featureNames)
-                        if lowercase(dataTypes[i]) in ["real","numeric"]
-                            push!(d, featureNames[i] => Meta.parse(values[i]))
-                        else
-                            # all the rest will be considered as String
-                            push!(d, featureNames[i] => values[i])
-                        end
-                    end
-                    push!(named_tuples, (; (Symbol(k) => v for (k,v) in d)...))
-                end
-            end
-        end
-    end
-    return identity.(named_tuples) # not performant; see above
-end
+Load the OpenML dataset with specified `id`, from those listed by
+[`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
+With `parser = :arff` (default) the ARFFFiles.jl parser is used.
+With `parser = :auto` the output of the ARFFFiles parser is coerced to
+automatically detected scientific types.
 
-"""
-    MLJOpenML.load(id)
+Returns a table.
 
-Load the OpenML dataset with specified `id`, from those listed on the
-[OpenML site](https://www.openml.org/search?type=data).
-
-Returns a "row table", i.e., a `Vector` of identically typed
-`NamedTuple`s. A row table is compatible with the
-[Tables.jl](https://github.com/JuliaData/Tables.jl) interface and can
-therefore be readily converted to other compatible formats. For
-example:
+# Examples
 
 ```julia
 using DataFrames
-rowtable = MLJOpenML.load(61);
-df = DataFrame(rowtable);
-
-using MLJ
-df2 = coerce(df, :class=>Multiclass)
+table = MLJOpenML.load(61);
+df = DataFrame(table);
 ```
 """
-function load(id::Int)
+function load(id::Int; parser = :arff)
     response = load_Dataset_Description(id)
     arff_file = HTTP.request("GET", response["data_set_description"]["url"])
-    return convert_ARFF_to_rowtable(arff_file)
+    data = ARFFFiles.load(IOBuffer(arff_file.body))
+    if parser == :auto
+        return coerce(data, autotype(data))
+    else
+        return data
+    end
 end
 
 
@@ -205,33 +168,9 @@ function load_Data_Qualities(id::Int; api_key::String = "")
 end
 
 """
-List datasets, possibly filtered by a range of properties.
-Any number of properties can be combined by listing them one after
-the other in the
-form '/data/list/{filter}/{value}/{filter}/{value}/...'
-Returns an array with all datasets that match the constraints.
+    load_List_And_Filter(filters; api_key = "")
 
-Any combination of these filters /limit/{limit}/offset/{offset} -
-returns only {limit} results starting from result number {offset}.
-Useful for paginating results. With /limit/5/offset/10,
-    results 11..15 will be returned.
-
-Both limit and offset need to be specified.
-/status/{status} - returns only datasets with a given status,
-either 'active', 'deactivated', or 'in_preparation'.
-/tag/{tag} - returns only datasets tagged with the given tag.
-/{data_quality}/{range} - returns only tasks for which the
-underlying datasets have certain qualities.
-{data_quality} can be data_id, data_name, data_version, number_instances,
-number_features, number_classes, number_missing_values. {range} can be a
-specific value or a range in the form 'low..high'.
-Multiple qualities can be combined, as in
-'number_instances/0..50/number_features/0..10'.
-
-- 370 - Illegal filter specified.
-- 371 - Filter values/ranges not properly specified.
-- 372 - No results. There where no matches for the given constraints.
-- 373 - Can not specify an offset without a limit.
+See [OpenML API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
 """
 function load_List_And_Filter(filters::String; api_key::String = "")
     if api_key == ""
@@ -256,6 +195,126 @@ function load_List_And_Filter(filters::String; api_key::String = "")
     end
     return nothing
 end
+
+qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
+
+"""
+    list_datasets(; tag = nothing, filters = "" api_key = "", output_format = NamedTuple)
+
+Lists all active OpenML datasets, if `tag = nothing` (default).
+To list only datasets with a given tag, choose one of the tags in [`list_tags()`](@ref).
+An alternative `output_format` can be chosen, e.g. `DataFrame`, if the
+`DataFrames` package is loaded.
+
+A filter is a string of `<data quality>/<range>` or `<data quality>/<value>`
+pairs, concatenated using `/`, such as
+
+```julia
+    filter = "number_features/10/number_instances/500..10000"
+```
+
+The allowed data qualities include `tag`, `status`, `limit`, `offset`,
+`data_id`, `data_name`, `data_version`, `uploader`,
+`number_instances`, `number_features`, `number_classes`,
+`number_missing_values`.
+
+For more on the format and effect of `filters` refer to the [openml
+API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
+
+# Examples
+```
+julia> using DataFrames
+
+julia> ds = MLJOpenML.list_datasets(
+               tag = "OpenML100",
+               filter = "number_instances/100..1000/number_features/1..10",
+               output_format = DataFrame
+)
+
+julia> sort!(ds, :NumberOfFeatures)
+```
+"""
+function list_datasets(; tag = nothing, filter = "", filters=filter,
+                         api_key = "", output_format = NamedTuple)
+    if tag !== nothing
+        if is_valid_tag(tag)
+            filters *= "/tag/$tag"
+        else
+            @warn "$tag is not a valid tag. See `list_tags()` for a list of tags."
+            return
+        end
+    end
+    data = MLJOpenML.load_List_And_Filter(filters; api_key = api_key)
+    datasets = data["data"]["dataset"]
+    qualities = Symbol.(union(vcat([vcat(qualitynames.(entry["quality"])...) for entry in datasets]...)))
+    result = merge((id = Int[], name = String[], status = String[]),
+                   NamedTuple{tuple(qualities...)}(ntuple(i -> Union{Missing, Int}[], length(qualities))))
+    for entry in datasets
+        push!(result.id, entry["did"])
+        push!(result.name, entry["name"])
+        push!(result.status, entry["status"])
+        for quality in entry["quality"]
+            push!(getproperty(result, Symbol(quality["name"])),
+                  Meta.parse(quality["value"]))
+        end
+        for quality in qualities
+            if length(getproperty(result, quality)) < length(result.id)
+                push!(getproperty(result, quality), missing)
+            end
+        end
+    end
+    output_format(result)
+end
+
+is_valid_tag(tag::String) = tag ∈ list_tags()
+is_valid_tag(tag) = false
+
+"""
+    list_tags()
+
+List all available tags.
+"""
+function list_tags()
+    url = string(API_URL, "/data/tag/list")
+    try
+        r = HTTP.request("GET", url)
+        return JSON.parse(String(r.body))["data_tag_list"]["tag"]
+    catch
+        return nothing
+    end
+end
+
+"""
+    describe_dataset(id)
+
+Load and show the OpenML description of the data set `id`.
+Use [`list_datasets`](@ref) to browse available data sets.
+
+# Examples
+```
+julia> MLJOpenML.describe_dataset(6)
+  Author: David J. Slate Source: UCI
+  (https://archive.ics.uci.edu/ml/datasets/Letter+Recognition) - 01-01-1991 Please cite: P.
+  W. Frey and D. J. Slate. "Letter Recognition Using Holland-style Adaptive Classifiers".
+  Machine Learning 6(2), 1991
+
+    1. TITLE:
+
+  Letter Image Recognition Data
+
+  The objective is to identify each of a large number of black-and-white
+  rectangular pixel displays as one of the 26 capital letters in the English
+  alphabet.  The character images were based on 20 different fonts and each
+  letter within these 20 fonts was randomly distorted to produce a file of
+  20,000 unique stimuli.  Each stimulus was converted into 16 primitive
+  numerical attributes (statistical moments and edge counts) which were then
+  scaled to fit into a range of integer values from 0 through 15.  We
+  typically train on the first 16000 items and then use the resulting model
+  to predict the letter category for the remaining 4000.  See the article
+  cited above for more details.
+```
+"""
+describe_dataset(id) =  Markdown.parse(load_Dataset_Description(id)["data_set_description"]["description"])
 
 # Flow API
 
