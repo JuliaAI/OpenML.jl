@@ -6,5 +6,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/JuliaAI/OpenML.jl.git",
+    repo = "github.com/JuliaAI/OpenML.jl",
+    push_preview = true
 )
