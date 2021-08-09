@@ -1,9 +1,3 @@
-using HTTP
-using JSON
-import ARFFFiles
-import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce, autotype
-using Markdown
-
 const API_URL = "https://www.openml.org/api/v1/json"
 
 # Data API
@@ -45,7 +39,7 @@ function load_Dataset_Description(id::Int; api_key::String="")
 end
 
 """
-    MLJOpenML.load(id; parser = :arff)
+    OpenML.load(id; parser = :arff)
 
 Load the OpenML dataset with specified `id`, from those listed by
 [`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
@@ -59,7 +53,7 @@ Returns a table.
 
 ```julia
 using DataFrames
-table = MLJOpenML.load(61);
+table = OpenML.load(61);
 df = DataFrame(table);
 ```
 """
@@ -225,7 +219,7 @@ API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
 ```
 julia> using DataFrames
 
-julia> ds = MLJOpenML.list_datasets(
+julia> ds = OpenML.list_datasets(
                tag = "OpenML100",
                filter = "number_instances/100..1000/number_features/1..10",
                output_format = DataFrame
@@ -244,7 +238,7 @@ function list_datasets(; tag = nothing, filter = "", filters=filter,
             return
         end
     end
-    data = MLJOpenML.load_List_And_Filter(filters; api_key = api_key)
+    data = OpenML.load_List_And_Filter(filters; api_key = api_key)
     datasets = data["data"]["dataset"]
     qualities = Symbol.(union(vcat([vcat(qualitynames.(entry["quality"])...) for entry in datasets]...)))
     result = merge((id = Int[], name = String[], status = String[]),
@@ -292,7 +286,7 @@ Use [`list_datasets`](@ref) to browse available data sets.
 
 # Examples
 ```
-julia> MLJOpenML.describe_dataset(6)
+julia> OpenML.describe_dataset(6)
   Author: David J. Slate Source: UCI
   (https://archive.ics.uci.edu/ml/datasets/Letter+Recognition) - 01-01-1991 Please cite: P.
   W. Frey and D. J. Slate. "Letter Recognition Using Holland-style Adaptive Classifiers".

@@ -1,57 +1,21 @@
-# MLJOpenML.jl
+# OpenML.jl
 
-| Linux | Coverage |
-| :-----------: | :------: |
-| [![Build status](https://github.com/JuliaAI/MLJOpenML.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/MLJOpenML.jl/actions)| [![codecov.io](http://codecov.io/github/JuliaAI/MLJOpenML.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAI/MLJOpenML.jl?branch=master) |
+| Linux | Coverage | Documentation |
+| :-----------: | :------: | :-------: |
+| [![Build status](https://github.com/JuliaAI/OpenML.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/OpenML.jl/actions)| [![codecov.io](http://codecov.io/github/JuliaAI/OpenML.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAI/OpenML.jl?branch=master) |  [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaAI.github.io/OpenML.jl/dev) |
 
-A package providing integration of [OpenML](https://www.openml.org) with the
-[MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/) machine
-learning framework.
+Partial implementation of the [OpenML](https://www.openml.org) API for
+Julia. At present this package allows querying and
+downloading of OpenML datasets. 
 
-Based entirely on Diego Arenas' original code contribution to MLJBase.jl.
-
-
-## Installation
-
-```julia
-using Pkg
-Pkg.add("MLJOpenML")
-```
-
-## Sample usage
-
-Load the iris data set from OpenML:
-
-```julia
-using MLJOpenML
-table = MLJOpenML.load(61) # a Tables.DictColumnTable
-```
-
-Convert to a `DataFrame`:
-
-```julia
-Pkg.add("DataFrames")
-using DataFrames
-df = DataFrame(table)
-```
-
-Browsing and filtering datasets:
-
-```julia
-using DataFrames
-ds = MLJOpenML.list_datasets(output_format = DataFrame)
-MLJOpenML.describe_dataset(6)
-MLJOpenML.list_tags() # lists valid tags
-ds = MLJOpenML.list_datasets(tag = "OpenML100", 
-                             filter = "number_instances/100..1000/number_features/1..10",
-                             output_format = DataFrame)
-```
-
-## Documentation
-
-Documentation is provided in the [OpenML
-Integration](https://alan-turing-institute.github.io/MLJ.jl/dev/openml_integration/)
-section of the
-[MLJManual](https://alan-turing-institute.github.io/MLJ.jl/dev/)
+For further integration with the
+[MLJ](https://JuliaAI.github.io/MLJ.jl/dev/) machine
+learning framework (such as uploading MLJ runs) see
+[MLJOpenML.jl](https://github.com/JuliaAI/MLJOpenML.jl).
 
 
+The code in this repository is based on contributions of Diego Arenas
+to [MLJBase.jl](https://github.com/JuliaAI/MLJBase.jl) which do not
+appear in the commit history of this repository.
+
+Package documentation is [here](https://JuliaAI.github.io/OpenML.jl/dev).

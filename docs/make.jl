@@ -1,10 +1,10 @@
-using Documenter, MLJOpenML
+using Documenter, OpenML, DataFrames
 
 makedocs(
-    modules = [MLJOpenML],
-    sitename = "MLJOpenML.jl",
+    modules = [OpenML,],
+    sitename = "OpenML.jl",
 )
 
 deploydocs(
-    repo = "github.com/alan-turing-institute/MLJOpenML.jl.git",
+    repo = "github.com/JuliaAI/OpenML.jl.git",
 )
