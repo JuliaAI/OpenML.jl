@@ -2,7 +2,7 @@
 
 | Linux | Coverage | Documentation |
 | :-----------: | :------: | :-------: |
-| [![Build status](https://github.com/JuliaAI/OpenML.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/OpenML.jl/actions)| [![codecov.io](http://codecov.io/github/JuliaAI/OpenML.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAI/OpenML.jl?branch=master) |  [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaAI.github.io/OpenML.jl/dev) |
+| [![Build status](https://github.com/JuliaAI/OpenML.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/OpenML.jl/actions)| [![codecov.io](http://codecov.io/github/JuliaAI/OpenML.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaAI/OpenML.jl?branch=master) |  [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaAI.github.io/OpenML.jl/stable) |
 
 Partial implementation of the [OpenML](https://www.openml.org) API for
 Julia. At present this package allows querying and
