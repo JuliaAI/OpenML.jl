@@ -5,6 +5,7 @@ using JSON
 import ARFFFiles
 import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce, autotype
 using Markdown
+using Pkg.Artifacts
 
 export OpenML
 
