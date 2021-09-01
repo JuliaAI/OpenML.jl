@@ -5,7 +5,9 @@ using JSON
 import ARFFFiles
 import ScientificTypes: Continuous, Count, Textual, Multiclass, coerce, autotype
 using Markdown
-using Pkg.Artifacts
+if VERSION > v"1.3.0"
+    using Pkg.Artifacts
+end
 
 export OpenML
 

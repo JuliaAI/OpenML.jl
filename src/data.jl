@@ -54,17 +54,24 @@ df = DataFrame(table);
 ```
 """
 function load(id::Int; parser = :arff)
-    dir = first(Artifacts.artifacts_dirs())
-    toml = joinpath(dir, "OpenMLArtifacts.toml")
-    hash = artifact_hash(string(id), toml)
-    if hash === nothing || !artifact_exists(hash)
-        hash = Artifacts.create_artifact() do artifact_dir
-            url = load_Dataset_Description(id)["data_set_description"]["url"]
-            download(url, joinpath(artifact_dir, "$id.arff"))
+    if VERSION > v"1.3.0"
+        dir = first(Artifacts.artifacts_dirs())
+        toml = joinpath(dir, "OpenMLArtifacts.toml")
+        hash = artifact_hash(string(id), toml)
+        if hash === nothing || !artifact_exists(hash)
+            hash = Artifacts.create_artifact() do artifact_dir
+                url = load_Dataset_Description(id)["data_set_description"]["url"]
+                download(url, joinpath(artifact_dir, "$id.arff"))
+            end
+            bind_artifact!(toml, string(id), hash)
         end
-        bind_artifact!(toml, string(id), hash)
+        filename = joinpath(artifact_path(hash), "$id.arff")
+    else
+        url = load_Dataset_Description(id)["data_set_description"]["url"]
+        filename = tempname()
+        download(url, filename)
     end
-    data = ARFFFiles.load(joinpath(artifact_path(hash), "$id.arff"))
+    data = ARFFFiles.load(filename)
     if parser == :auto
         return coerce(data, autotype(data))
     else

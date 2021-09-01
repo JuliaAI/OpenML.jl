@@ -4,7 +4,6 @@ using Test
 using HTTP
 using OpenML
 import Tables.istable
-using Pkg.Artifacts
 
 response_test = OpenML.load_Dataset_Description(61)
 ntp_test = OpenML.load(61)
@@ -41,13 +40,15 @@ end
     @test length(filters_test["data"]["dataset"][1]) == offset
 end
 
-@testset "artifacts" begin
-    dir = first(Artifacts.artifacts_dirs())
-    toml = joinpath(dir, "OpenMLArtifacts.toml")
-    hash = artifact_hash("61", toml)
-    @test artifact_exists(hash)
+if VERSION > v"1.3.0"
+    using Pkg.Artifacts
+    @testset "artifacts" begin
+        dir = first(Artifacts.artifacts_dirs())
+        toml = joinpath(dir, "OpenMLArtifacts.toml")
+        hash = artifact_hash("61", toml)
+        @test artifact_exists(hash)
+    end
 end
-
 
 end
 true
