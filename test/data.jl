@@ -40,5 +40,15 @@ end
     @test length(filters_test["data"]["dataset"][1]) == offset
 end
 
+if VERSION > v"1.3.0"
+    using Pkg.Artifacts
+    @testset "artifacts" begin
+        dir = first(Artifacts.artifacts_dirs())
+        toml = joinpath(dir, "OpenMLArtifacts.toml")
+        hash = artifact_hash("61", toml)
+        @test artifact_exists(hash)
+    end
+end
+
 end
 true
