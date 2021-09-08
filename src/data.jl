@@ -43,6 +43,8 @@ With `parser = :arff` (default) the ARFFFiles.jl parser is used.
 With `parser = :auto` the output of the ARFFFiles parser is coerced to
 automatically detected scientific types.
 
+Datasets are saved as julia artifacts so that they persist locally once loaded. 
+
 Returns a table.
 
 # Examples
