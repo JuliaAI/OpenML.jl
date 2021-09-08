@@ -1,7 +1,7 @@
 name = "OpenML"
 uuid = "8b6db2d4-7670-4922-a472-f9537c81ab66"
 authors = ["Diego Arenas <darenasc@gmail.com>", "Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 ARFFFiles = "da404889-ca92-49ff-9e8b-0aa6b4d38dc8"
