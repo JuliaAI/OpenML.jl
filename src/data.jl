@@ -5,10 +5,6 @@ const API_URL = "https://www.openml.org/api/v1/json"
 # https://github.com/openml/OpenML/tree/master/openml_OS/views/pages/api_new/v1/xsd
 # https://www.openml.org/api_docs#!/data/get_data_id
 
-# TODO:
-# - Use e.g. DataDeps to cache data locally
-# - Put the ARFF parser to a separate package or use ARFFFiles when
-#   https://github.com/cjdoris/ARFFFiles.jl/issues/4 is fixed.
 
 """
 Returns information about a dataset. The information includes the name,
@@ -47,6 +43,8 @@ With `parser = :arff` (default) the ARFFFiles.jl parser is used.
 With `parser = :auto` the output of the ARFFFiles parser is coerced to
 automatically detected scientific types.
 
+Datasets are saved as julia artifacts so that they persist locally once loaded. 
+
 Returns a table.
 
 # Examples
@@ -58,9 +56,24 @@ df = DataFrame(table);
 ```
 """
 function load(id::Int; parser = :arff)
-    response = load_Dataset_Description(id)
-    arff_file = HTTP.request("GET", response["data_set_description"]["url"])
-    data = ARFFFiles.load(IOBuffer(arff_file.body))
+    if VERSION > v"1.3.0"
+        dir = first(Artifacts.artifacts_dirs())
+        toml = joinpath(dir, "OpenMLArtifacts.toml")
+        hash = artifact_hash(string(id), toml)
+        if hash === nothing || !artifact_exists(hash)
+            hash = Artifacts.create_artifact() do artifact_dir
+                url = load_Dataset_Description(id)["data_set_description"]["url"]
+                download(url, joinpath(artifact_dir, "$id.arff"))
+            end
+            bind_artifact!(toml, string(id), hash)
+        end
+        filename = joinpath(artifact_path(hash), "$id.arff")
+    else
+        url = load_Dataset_Description(id)["data_set_description"]["url"]
+        filename = tempname()
+        download(url, filename)
+    end
+    data = ARFFFiles.load(filename)
     if parser == :auto
         return coerce(data, autotype(data))
     else
