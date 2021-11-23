@@ -28,22 +28,21 @@ function load_Dataset_Description(id::Int; api_key::String="")
             println("No access granted. This dataset is not shared with you.")
         end
     catch e
-        println("Error occurred : $e")
+        println("Error occurred. Check if there exists a dataset with id $id.")
+        println("See e.g. OpenML.list_datasets()\n")
+        println(e)
         return nothing
     end
     return nothing
 end
 
 """
-    OpenML.load(id; parser = :arff)
+    OpenML.load(id)
 
 Load the OpenML dataset with specified `id`, from those listed by
 [`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
-With `parser = :arff` (default) the ARFFFiles.jl parser is used.
-With `parser = :auto` the output of the ARFFFiles parser is coerced to
-automatically detected scientific types.
 
-Datasets are saved as julia artifacts so that they persist locally once loaded. 
+Datasets are saved as julia artifacts so that they persist locally once loaded.
 
 Returns a table.
 
@@ -51,11 +50,13 @@ Returns a table.
 
 ```julia
 using DataFrames
-table = OpenML.load(61);
-df = DataFrame(table);
+table = OpenML.load(61)
+df = DataFrame(table) # transform to a DataFrame
+using ScientificTypes
+df2 = coerce(df, autotype(df)) # corce to automatically detected scientific types
 ```
 """
-function load(id::Int; parser = :arff)
+function load(id::Int)
     if VERSION > v"1.3.0"
         dir = first(Artifacts.artifacts_dirs())
         toml = joinpath(dir, "OpenMLArtifacts.toml")
@@ -73,12 +74,7 @@ function load(id::Int; parser = :arff)
         filename = tempname()
         download(url, filename)
     end
-    data = ARFFFiles.load(filename)
-    if parser == :auto
-        return coerce(data, autotype(data))
-    else
-        return data
-    end
+    ARFFFiles.load(filename)
 end
 
 
@@ -321,7 +317,14 @@ julia> OpenML.describe_dataset(6)
   cited above for more details.
 ```
 """
-describe_dataset(id) =  Markdown.parse(load_Dataset_Description(id)["data_set_description"]["description"])
+function describe_dataset(id)
+    description = load_Dataset_Description(id)["data_set_description"]["description"]
+    if isa(description, AbstractString)
+        Markdown.parse(description)
+    else
+        "No description found."
+    end
+end
 
 # Flow API
 
