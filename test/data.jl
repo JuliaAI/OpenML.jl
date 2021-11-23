@@ -41,12 +41,12 @@ end
 end
 
 if VERSION > v"1.3.0"
-    using Pkg.Artifacts
+    using Pkg
     @testset "artifacts" begin
-        dir = first(Artifacts.artifacts_dirs())
+        dir = first(Pkg.Artifacts.artifacts_dirs())
         toml = joinpath(dir, "OpenMLArtifacts.toml")
-        hash = artifact_hash("61", toml)
-        @test artifact_exists(hash)
+        hash = Pkg.Artifacts.artifact_hash("61", toml)
+        @test Pkg.Artifacts.artifact_exists(hash)
     end
 end
 
