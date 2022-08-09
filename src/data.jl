@@ -41,7 +41,7 @@ Returns information about a dataset. The information includes the name,
 information about the creator, URL to download it and more.
 """
 function load_Dataset_Description(id::Int)
-    get("data/$id",
+    get("/data/$id",
         extra_error_message = "Check if there is a dataset with id $id.\nSee e.g. OpenML.list_datasets()\n")
 end
 
