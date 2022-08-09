@@ -14,23 +14,20 @@ information about the creator, URL to download it and more.
 - 111 - Unknown dataset. Data set description with data_id was not found in the database.
 - 112 - No access granted. This dataset is not shared with you.
 """
-function load_Dataset_Description(id::Int; api_key::String="")
+function load_Dataset_Description(id::Int)
     url = string(API_URL, "/data/$id")
     try
         r = HTTP.request("GET", url)
-        if r.status == 200
-            return JSON.parse(String(r.body))
-        elseif r.status == 110
-            println("Please provide data_id.")
-        elseif r.status == 111
-            println("Unknown dataset. Data set description with data_id was not found in the database.")
-        elseif r.status == 112
-            println("No access granted. This dataset is not shared with you.")
-        end
+        return JSON.parse(String(r.body))
     catch e
-        println("Error occurred. Check if there exists a dataset with id $id.")
-        println("See e.g. OpenML.list_datasets()\n")
-        println(e)
+        if isa(e, HTTP.StatusError) && e.status == 412
+            error = JSON.parse(String(e.response.body))["error"]
+            @error error["message"]
+        else
+            println("Error occurred. Check if there exists a dataset with id $id.")
+            println("See e.g. OpenML.list_datasets()\n")
+            println(e)
+        end
         return nothing
     end
     return nothing
