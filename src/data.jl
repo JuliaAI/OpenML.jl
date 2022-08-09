@@ -6,31 +6,43 @@ const API_URL = "https://www.openml.org/api/v1/json"
 # https://www.openml.org/api_docs#!/data/get_data_id
 
 
-"""
-Returns information about a dataset. The information includes the name,
-information about the creator, URL to download it and more.
-
-- 110 - Please provide data_id.
-- 111 - Unknown dataset. Data set description with data_id was not found in the database.
-- 112 - No access granted. This dataset is not shared with you.
-"""
-function load_Dataset_Description(id::Int)
-    url = string(API_URL, "/data/$id")
-    try
-        r = HTTP.request("GET", url)
-        return JSON.parse(String(r.body))
-    catch e
-        if isa(e, HTTP.StatusError) && e.status == 412
-            error = JSON.parse(String(e.response.body))["error"]
-            @error error["message"]
-        else
-            println("Error occurred. Check if there exists a dataset with id $id.")
-            println("See e.g. OpenML.list_datasets()\n")
-            println(e)
+function error_msg_handling(e)
+    if isa(e, HTTP.StatusError) && e.status == 412
+        try
+            err = JSON.parse(String(e.response.body))["error"]
+            msg = err["message"]
+            code = err["code"]
+            additional_msg = haskey(err, "additional_message") ? err["additional_message"] : ""
+            @error msg * " " * additional_msg * "(error code $code)"
+        catch
+            @error String(e.response.body)
         end
-        return nothing
+    else
+        println(e)
     end
     return nothing
+end
+
+function get(url; extra_error_message = "")
+    try
+        r = HTTP.request("GET", string(API_URL, url))
+        return JSON.parse(String(r.body))
+    catch e
+        error_msg_handling(e)
+        extra_error_message != "" && println(extra_error_message)
+    end
+    return nothing
+end
+
+"""
+    OpenML.load_Dataset_Description(id::Int)
+
+Returns information about a dataset. The information includes the name,
+information about the creator, URL to download it and more.
+"""
+function load_Dataset_Description(id::Int)
+    get("data/$id",
+        extra_error_message = "Check if there is a dataset with id $id.\nSee e.g. OpenML.list_datasets()\n")
 end
 
 """
@@ -76,130 +88,37 @@ end
 
 
 """
+    load_Data_Qualities_List()
+
 Returns a list of all data qualities in the system.
-
-- 412 - Precondition failed. An error code and message are returned
-- 370 - No data qualities available. There are no data qualities in the system.
 """
-function load_Data_Qualities_List()
-    url = string(API_URL, "/data/qualities/list")
-    try
-        r = HTTP.request("GET", url)
-        if r.status == 200
-            return JSON.parse(String(r.body))
-        elseif r.status == 370
-            println("No data qualities available. There are no data qualities in the system.")
-        end
-    catch e
-        println("Error occurred : $e")
-        return nothing
-    end
-    return nothing
-end
+load_Data_Qualities_List() = get("/data/qualities/list")
 
 """
-Returns a list of all data qualities in the system.
+    load_Data_Qualities(id::Int)
 
-- 271 - Unknown dataset. Data set with the given data ID was not found (or is not shared with you).
-- 272 - No features found. The dataset did not contain any features, or we could not extract them.
-- 273 - Dataset not processed yet. The dataset was not processed yet, features are not yet available. Please wait for a few minutes.
-- 274 - Dataset processed with error. The feature extractor has run into an error while processing the dataset. Please check whether it is a valid supported file. If so, please contact the API admins.
+Returns the qualities of dataset `id`.
 """
-function load_Data_Features(id::Int; api_key::String = "")
-    if api_key == ""
-        url = string(API_URL, "/data/features/$id")
-    end
-    try
-        r = HTTP.request("GET", url)
-        if r.status == 200
-            return JSON.parse(String(r.body))
-        elseif r.status == 271
-            println("Unknown dataset. Data set with the given data ID was not found (or is not shared with you).")
-        elseif r.status == 272
-            println("No features found. The dataset did not contain any features, or we could not extract them.")
-        elseif r.status == 273
-            println("Dataset not processed yet. The dataset was not processed yet, features are not yet available. Please wait for a few minutes.")
-        elseif r.status == 274
-            println("Dataset processed with error. The feature extractor has run into an error while processing the dataset. Please check whether it is a valid supported file. If so, please contact the API admins.")
-        end
-    catch e
-        println("Error occurred : $e")
-        return nothing
-    end
-    return nothing
-end
+load_Data_Qualities(id::Int) = get("/data/qualities/$id")
 
 """
-Returns the qualities of a dataset.
+    load_Data_Features(id::Int)
 
-- 360 - Please provide data set ID
-- 361 - Unknown dataset. The data set with the given ID was not found in the database, or is not shared with you.
-- 362 - No qualities found. The registered dataset did not contain any calculated qualities.
-- 363 - Dataset not processed yet. The dataset was not processed yet, no qualities are available. Please wait for a few minutes.
-- 364 - Dataset processed with error. The quality calculator has run into an error while processing the dataset. Please check whether it is a valid supported file. If so, contact the support team.
-- 365 - Interval start or end illegal. There was a problem with the interval start or end.
+Returns a list of all data qualities for dataset `id`.
 """
-function load_Data_Qualities(id::Int; api_key::String = "")
-    if api_key == ""
-        url = string(API_URL, "/data/qualities/$id")
-    end
-    try
-        r = HTTP.request("GET", url)
-        if r.status == 200
-            return JSON.parse(String(r.body))
-        elseif r.status == 360
-            println("Please provide data set ID")
-        elseif r.status == 361
-            println("Unknown dataset. The data set with the given ID was not found in the database, or is not shared with you.")
-        elseif r.status == 362
-            println("No qualities found. The registered dataset did not contain any calculated qualities.")
-        elseif r.status == 363
-            println("Dataset not processed yet. The dataset was not processed yet, no qualities are available. Please wait for a few minutes.")
-        elseif r.status == 364
-            println("Dataset processed with error. The quality calculator has run into an error while processing the dataset. Please check whether it is a valid supported file. If so, contact the support team.")
-        elseif r.status == 365
-            println("Interval start or end illegal. There was a problem with the interval start or end.")
-        end
-    catch e
-        println("Error occurred : $e")
-        return nothing
-    end
-    return nothing
-end
+load_Data_Features(id::Int) = get("/data/features/$id")
 
 """
-    load_List_And_Filter(filters; api_key = "")
+    load_List_And_Filter(filters)
 
 See [OpenML API](https://www.openml.org/api_docs#!/data/get_data_list_filters).
 """
-function load_List_And_Filter(filters::String; api_key::String = "")
-    if api_key == ""
-        url = string(API_URL, "/data/list/$filters")
-    end
-    try
-        r = HTTP.request("GET", url)
-        if r.status == 200
-            return JSON.parse(String(r.body))
-        elseif r.status == 370
-            println("Illegal filter specified.")
-        elseif r.status == 371
-            println("Filter values/ranges not properly specified.")
-        elseif r.status == 372
-            println("No results. There where no matches for the given constraints.")
-        elseif r.status == 373
-            println("Can not specify an offset without a limit.")
-        end
-    catch e
-        println("Error occurred : $e")
-        return nothing
-    end
-    return nothing
-end
+load_List_And_Filter(filters::String) = get("/data/list/$filters")
 
 qualitynames(x) = haskey(x, "name") ? [x["name"]] : []
 
 """
-    list_datasets(; tag = nothing, filters = "" api_key = "", output_format = NamedTuple)
+    list_datasets(; tag = nothing, filters = "", output_format = NamedTuple)
 
 Lists all active OpenML datasets, if `tag = nothing` (default).
 To list only datasets with a given tag, choose one of the tags in [`list_tags()`](@ref).
@@ -234,8 +153,8 @@ julia> ds = OpenML.list_datasets(
 julia> sort!(ds, :NumberOfFeatures)
 ```
 """
-function list_datasets(; tag = nothing, filter = "", filters=filter,
-                         api_key = "", output_format = NamedTuple)
+function list_datasets(; tag = nothing, filter = "", filters = filter,
+                         output_format = NamedTuple)
     if tag !== nothing
         if is_valid_tag(tag)
             filters *= "/tag/$tag"
@@ -244,7 +163,7 @@ function list_datasets(; tag = nothing, filter = "", filters=filter,
             return
         end
     end
-    data = OpenML.load_List_And_Filter(filters; api_key = api_key)
+    data = OpenML.load_List_And_Filter(filters)
     datasets = data["data"]["dataset"]
     qualities = Symbol.(union(vcat([vcat(qualitynames.(entry["quality"])...) for entry in datasets]...)))
     result = merge((id = Int[], name = String[], status = String[]),
@@ -275,12 +194,9 @@ is_valid_tag(tag) = false
 List all available tags.
 """
 function list_tags()
-    url = string(API_URL, "/data/tag/list")
-    try
-        r = HTTP.request("GET", url)
-        return JSON.parse(String(r.body))["data_tag_list"]["tag"]
-    catch
-        return nothing
+    result = get("/data/tag/list")
+    if !isnothing(result)
+        return result["data_tag_list"]["tag"]
     end
 end
 
@@ -315,7 +231,9 @@ julia> OpenML.describe_dataset(6)
 ```
 """
 function describe_dataset(id)
-    description = load_Dataset_Description(id)["data_set_description"]["description"]
+    result = load_Dataset_Description(id)
+    result === nothing && return
+    description = result["data_set_description"]["description"]
     if isa(description, AbstractString)
         Markdown.parse(description)
     else
