@@ -46,7 +46,7 @@ function load_Dataset_Description(id::Int)
 end
 
 """
-    OpenML.load(id)
+    OpenML.load(id; maxbytes = nothing)
 
 Load the OpenML dataset with specified `id`, from those listed by
 [`list_datasets`](@ref) or on the [OpenML site](https://www.openml.org/search?type=data).
@@ -63,9 +63,11 @@ table = OpenML.load(61)
 df = DataFrame(table) # transform to a DataFrame
 using ScientificTypes
 df2 = coerce(df, autotype(df)) # corce to automatically detected scientific types
+
+peek_table = OpenML.load(61, maxbytes = 1024) # load only the first 1024 bytes of the table
 ```
 """
-function load(id::Int)
+function load(id::Int; maxbytes = nothing)
     if VERSION > v"1.3.0"
         dir = first(Artifacts.artifacts_dirs())
         toml = joinpath(dir, "OpenMLArtifacts.toml")
@@ -83,7 +85,7 @@ function load(id::Int)
         filename = tempname()
         download(url, filename)
     end
-    ARFFFiles.load(filename)
+    ARFFFiles.load(x -> ARFFFiles.readcolumns(x; maxbytes), filename)
 end
 
 
