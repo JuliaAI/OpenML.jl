@@ -85,7 +85,7 @@ function load(id::Int; maxbytes = nothing)
         filename = tempname()
         download(url, filename)
     end
-    ARFFFiles.load(x -> ARFFFiles.readcolumns(x; maxbytes), filename)
+    ARFFFiles.load(x -> ARFFFiles.readcolumns(x; maxbytes = maxbytes), filename)
 end
 
 
