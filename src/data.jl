@@ -15,10 +15,10 @@ function error_msg_handling(e)
             additional_msg = haskey(err, "additional_message") ? err["additional_message"] : ""
             @error msg * " " * additional_msg * "(error code $code)"
         catch
-            @error String(e.response.body)
+            @error e
         end
     else
-        println(e)
+        throw(e)
     end
     return nothing
 end
