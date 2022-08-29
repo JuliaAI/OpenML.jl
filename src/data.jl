@@ -23,9 +23,9 @@ function error_msg_handling(e)
     return nothing
 end
 
-function get(url; extra_error_message = "")
+function get(query; extra_error_message = "")
     try
-        r = HTTP.request("GET", string(API_URL, url))
+        r = HTTP.request("GET", string(API_URL, query))
         return JSON.parse(String(r.body))
     catch e
         error_msg_handling(e)
