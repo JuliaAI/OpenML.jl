@@ -6,30 +6,25 @@ const API_URL = "https://www.openml.org/api/v1/json"
 # https://www.openml.org/api_docs#!/data/get_data_id
 
 
-function error_msg_handling(e)
-    if isa(e, HTTP.StatusError) && e.status == 412
-        try
-            err = JSON.parse(String(e.response.body))["error"]
-            msg = err["message"]
-            code = err["code"]
-            additional_msg = haskey(err, "additional_message") ? err["additional_message"] : ""
-            @error msg * " " * additional_msg * "(error code $code)"
-        catch
-            @error e
-        end
-    else
-        throw(e)
-    end
-    return nothing
-end
-
 function get(query; extra_error_message = "")
     try
         r = HTTP.request("GET", string(API_URL, query))
         return JSON.parse(String(r.body))
     catch e
-        error_msg_handling(e)
-        extra_error_message != "" && println(extra_error_message)
+        if isa(e, HTTP.StatusError) && e.status == 412
+            try
+                err = JSON.parse(String(e.response.body))["error"]
+                msg = err["message"]
+                code = err["code"]
+                additional_msg = haskey(err, "additional_message") ? err["additional_message"] : ""
+                @error msg * " " * additional_msg * "(error code $code)"
+            catch
+                @error e
+            end
+            extra_error_message != "" && println(extra_error_message)
+        else
+            throw(e)
+        end
     end
     return nothing
 end
