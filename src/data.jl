@@ -1,29 +1,36 @@
 const API_URL = "https://www.openml.org/api/v1/json"
 
-# Data API
-# The structures are based on these descriptions
-# https://github.com/openml/OpenML/tree/master/openml_OS/views/pages/api_new/v1/xsd
-# https://www.openml.org/api_docs#!/data/get_data_id
+struct OpenMLAPIError <: Exception
+    msg::String
+end
+function Base.showerror(io::IO, e::OpenMLAPIError)
+    print(io, e.msg)
+end
 
 
-function get(query; extra_error_message = "")
+# Data API. See REST API on https://www.openml.org/apis
+function get(query)
     try
         r = HTTP.request("GET", string(API_URL, query))
         return JSON.parse(String(r.body))
     catch e
         if isa(e, HTTP.StatusError) && e.status == 412
-            try
-                err = JSON.parse(String(e.response.body))["error"]
-                msg = err["message"]
-                code = err["code"]
-                additional_msg = haskey(err, "additional_message") ? err["additional_message"] : ""
-                @error msg * " " * additional_msg * "(error code $code)"
+            error_string = String(e.response.body)
+            err = try
+                JSON.parse(error_string)["error"]
             catch
-                @error e
+                @error(error_string)
+                throw(OpenMLAPIError("Malformed query \"$query\"."))
             end
-            extra_error_message != "" && println(extra_error_message)
+            msg = err["message"]
+            code = err["code"]
+            additional_msg = haskey(err, "additional_message") ? err["additional_message"] : ""
+            if code == "111"
+                additional_msg *= "Check if there is a dataset with id $(last(split(query, '/'))).\nSee e.g. OpenML.list_datasets(). "
+            end
+            throw(OpenMLAPIError(msg * ". " * additional_msg * "(error code $code)"))
         else
-            throw(e)
+            rethrow()
         end
     end
     return nothing
@@ -35,10 +42,7 @@ end
 Returns information about a dataset. The information includes the name,
 information about the creator, URL to download it and more.
 """
-function load_Dataset_Description(id::Int)
-    get("/data/$id",
-        extra_error_message = "Check if there is a dataset with id $id.\nSee e.g. OpenML.list_datasets()\n")
-end
+load_Dataset_Description(id::Int) = get("/data/$id")
 
 """
     OpenML.load(id; maxbytes = nothing)
