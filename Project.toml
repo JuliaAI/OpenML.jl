@@ -1,7 +1,7 @@
 name = "OpenML"
 uuid = "8b6db2d4-7670-4922-a472-f9537c81ab66"
 authors = ["Diego Arenas <darenasc@gmail.com>", "Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 ARFFFiles = "da404889-ca92-49ff-9e8b-0aa6b4d38dc8"
@@ -11,8 +11,8 @@ Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [compat]
-ARFFFiles = "1.3"
-HTTP = "0.8, 0.9"
+ARFFFiles = "1.4.1"
+HTTP = "0.8, 0.9,1"
 JSON = "0.21"
 julia = "1"
 
