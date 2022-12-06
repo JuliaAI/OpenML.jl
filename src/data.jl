@@ -67,24 +67,12 @@ peek_table = OpenML.load(61, maxbytes = 1024) # load only the first 1024 bytes o
 ```
 """
 function load(id::Int; maxbytes = nothing)
-    if VERSION > v"1.3.0"
-        dir = first(Artifacts.artifacts_dirs())
-        toml = joinpath(dir, "OpenMLArtifacts.toml")
-        hash = artifact_hash(string(id), toml)
-        if hash === nothing || !artifact_exists(hash)
-            hash = Artifacts.create_artifact() do artifact_dir
-                url = load_Dataset_Description(id)["data_set_description"]["url"]
-                download(url, joinpath(artifact_dir, "$id.arff"))
-            end
-            bind_artifact!(toml, string(id), hash)
-        end
-        filename = joinpath(artifact_path(hash), "$id.arff")
-    else
-        url = load_Dataset_Description(id)["data_set_description"]["url"]
-        filename = tempname()
-        download(url, filename)
+    fname = joinpath(download_cache, "$id.arff")
+    if !isfile(fname)
+        @info "Downloading dataset $id."
+        download(load_Dataset_Description(id)["data_set_description"]["url"], fname)
     end
-    ARFFFiles.load(x -> ARFFFiles.readcolumns(x; maxbytes = maxbytes), filename)
+    ARFFFiles.load(x -> ARFFFiles.readcolumns(x; maxbytes = maxbytes), fname)
 end
 
 
