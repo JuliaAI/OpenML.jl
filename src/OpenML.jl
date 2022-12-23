@@ -4,12 +4,16 @@ using HTTP
 using JSON
 import ARFFFiles
 using Markdown
-if VERSION > v"1.3.0"
-    using Pkg.Artifacts
-end
+using Scratch
 
 export OpenML
 
+download_cache = ""
+
 include("data.jl")
+
+function __init__()
+    global download_cache = @get_scratch!("datasets")
+end
 
 end # module
