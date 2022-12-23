@@ -40,15 +40,22 @@ end
     @test length(filters_test["data"]["dataset"][1]) == offset
 end
 
-if VERSION > v"1.3.0"
-    using Pkg
-    @testset "artifacts" begin
-        dir = first(Pkg.Artifacts.artifacts_dirs())
-        toml = joinpath(dir, "OpenMLArtifacts.toml")
-        hash = Pkg.Artifacts.artifact_hash("61", toml)
-        @test Pkg.Artifacts.artifact_exists(hash)
+@testset "scratch" begin
+    OpenML.load(61)
+    fname = joinpath(OpenML.download_cache, "61.arff")
+    @test isfile(fname)
+    using Logging
+    io = IOBuffer()
+    logger = SimpleLogger(io)
+    with_logger(logger) do
+        OpenML.load(61)
     end
+    @test match(r"Downloading dataset 61", String(take!(io))) === nothing
+    rm(fname)
+    with_logger(logger) do
+        OpenML.load(61)
+    end
+    @test match(r"Downloading dataset 61", String(take!(io))) !== nothing
 end
 
 end
-true
