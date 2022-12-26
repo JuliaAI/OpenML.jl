@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>OpenML.jl Documentation · OpenML.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">OpenML.jl</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>OpenML.jl Documentation</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Sample-usage"><span>Sample usage</span></a></li><li><a class="tocitem" href="#Public-API"><span>Public API</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>OpenML.jl Documentation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>OpenML.jl Documentation</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaAI/OpenML.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="OpenML.jl-Documentation"><a class="docs-heading-anchor" href="#OpenML.jl-Documentation">OpenML.jl Documentation</a><a id="OpenML.jl-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#OpenML.jl-Documentation" title="Permalink"></a></h1><p>This is the reference documentation of <a href="https://github.com/JuliaAI/OpenML.jl"><code>OpenML.jl</code></a>.</p><p>The <a href="https://www.openml.org">OpenML platform</a> provides an integration platform for carrying out and comparing machine learning solutions across a broad collection of public datasets and software platforms.</p><p>Summary of OpenML.jl functionality:</p><ul><li><p><a href="#OpenML.list_tags"><code>OpenML.list_tags</code></a><code>()</code>: for listing all dataset tags</p></li><li><p><a href="#OpenML.list_datasets"><code>OpenML.list_datasets</code></a><code>(; tag=nothing, filter=nothing, output_format=...)</code>: for listing available datasets</p></li><li><p><a href="#OpenML.describe_dataset"><code>OpenML.describe_dataset</code></a><code>(id)</code>: to describe a particular dataset</p></li><li><p><a href="#OpenML.load"><code>OpenML.load</code></a><code>(id; parser=:arff)</code>: to download a dataset</p></li></ul><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><pre><code class="language-julia">using Pkg
+Pkg.add(&quot;OpenML&quot;)</code></pre><p>If running the demonstration below:</p><pre><code class="language-julia">Pkg.add(&quot;DataFrames&quot;) 
+Pkg.add(&quot;ScientificTypes&quot;)</code></pre><h2 id="Sample-usage"><a class="docs-heading-anchor" href="#Sample-usage">Sample usage</a><a id="Sample-usage-1"></a><a class="docs-heading-anchor-permalink" href="#Sample-usage" title="Permalink"></a></h2><pre><code class="language-julia-repl">julia&gt; using OpenML # or using MLJ
+
+julia&gt; using DataFrames
+
+julia&gt; OpenML.list_tags()
+254-element Vector{Any}:
+ &quot;study_41&quot;
+ &quot;uci&quot;
+ &quot;study_34&quot;
+ &quot;study_37&quot;
+ &quot;mythbusting_1&quot;
+ &quot;OpenML-CC18&quot;
+ &quot;study_99&quot;
+ &quot;artificial&quot;
+ &quot;BNG&quot;
+ &quot;study_16&quot;
+ ⋮
+ &quot;machine learning&quot;
+ &quot;ML&quot;
+ &quot;survival analysis&quot;
+ &quot;Graphical models&quot;
+ &quot;MaRDI&quot;
+ &quot;TA3&quot;
+ &quot;New Tag&quot;
+ &quot;Random Tag&quot;
+ &quot;_test&quot;</code></pre><p>Listing all datasets with the &quot;OpenML100&quot; tag which also have <code>n</code> instances and <code>p</code> features, where <code>100 &lt; n &lt; 1000</code> and <code>1 &lt; p &lt; 10</code>:</p><pre><code class="language-julia-repl">julia&gt; ds = OpenML.list_datasets(
+                 tag = &quot;OpenML100&quot;,
+                 filter = &quot;number_instances/100..1000/number_features/1..10&quot;,
+                 output_format = DataFrame)
+12×13 DataFrame
+ Row │ id     name                              status  MajorityClassSize  Max ⋯
+     │ Int64  String                            String  Int64?             Int ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │    11  balance-scale                     active                288      ⋯
+   2 │    15  breast-w                          active                458
+   3 │    37  diabetes                          active                500
+   4 │    50  tic-tac-toe                       active                626
+   5 │   333  monks-problems-1                  active                278      ⋯
+   6 │   334  monks-problems-2                  active                395
+   7 │   335  monks-problems-3                  active                288
+   8 │   451  irish                             active                278
+   9 │   469  analcatdata_dmft                  active                155      ⋯
+  10 │   470  profb                             active                448
+  11 │  1464  blood-transfusion-service-center  active                570
+  12 │ 40496  LED-display-domain-7digit         active                 57
+                                                               9 columns omitted</code></pre><p>Describing and loading one of these datasets:</p><pre><code class="language-julia-repl">julia&gt; OpenML.describe_dataset(15)
+  Author: Dr. William H. Wolberg, University of Wisconsin Source: UCI
+  (https://archive.ics.uci.edu/ml/datasets/breast+cancer+wisconsin+(original)),
+  University of Wisconsin (http://pages.cs.wisc.edu/~olvi/uwmp/cancer.html) -
+  1995 Please cite: See below, plus UCI
+  (https://archive.ics.uci.edu/ml/citation_policy.html)
+
+  Breast Cancer Wisconsin (Original) Data Set. Features are computed from a
+  digitized image of a fine needle aspirate (FNA) of a breast mass. They
+  describe characteristics of the cell nuclei present in the image. The target
+  feature records the prognosis (malignant or benign). Original data available
+  here (ftp://ftp.cs.wisc.edu/math-prog/cpo-dataset/machine-learn/cancer/)
+
+  Current dataset was adapted to ARFF format from the UCI version. Sample code
+  ID&#39;s were removed.
+
+  ! Note that there is also a related Breast Cancer Wisconsin (Diagnosis) Data
+  Set with a different set of features, better known as wdbc
+  (https://www.openml.org/d/1510).
+
+  Relevant Papers
+  –––––––––––––––––
+
+  W.N. Street, W.H. Wolberg and O.L. Mangasarian. Nuclear feature extraction
+  for breast tumor diagnosis. IS&amp;T/SPIE 1993 International Symposium on
+  Electronic Imaging: Science and Technology, volume 1905, pages 861-870, San
+  Jose, CA, 1993.
+
+  O.L. Mangasarian, W.N. Street and W.H. Wolberg. Breast cancer diagnosis and
+  prognosis via linear programming. Operations Research, 43(4), pages 570-577,
+  July-August 1995.
+
+  Citation request
+  ––––––––––––––––––
+
+  This breast cancer database was obtained from the University of Wisconsin
+  Hospitals, Madison from Dr. William H. Wolberg. If you publish results when
+  using this database, then please include this information in your
+  acknowledgments. Also, please cite one or more of:
+
+    1. O. L. Mangasarian and W. H. Wolberg: &quot;Cancer diagnosis via linear
+       programming&quot;, SIAM News, Volume 23, Number 5, September 1990, pp 1
+       &amp; 18.
+
+    2. William H. Wolberg and O.L. Mangasarian: &quot;Multisurface method of
+       pattern separation for medical diagnosis applied to breast
+       cytology&quot;, Proceedings of the National Academy of Sciences,
+       U.S.A., Volume 87, December 1990, pp 9193-9196.
+
+    3. O. L. Mangasarian, R. Setiono, and W.H. Wolberg: &quot;Pattern
+       recognition via linear programming: Theory and application to
+       medical diagnosis&quot;, in: &quot;Large-scale numerical optimization&quot;,
+       Thomas F. Coleman and Yuying Li, editors, SIAM Publications,
+       Philadelphia 1990, pp 22-30.
+
+    4. K. P. Bennett &amp; O. L. Mangasarian: &quot;Robust linear programming
+       discrimination of two linearly inseparable sets&quot;, Optimization
+       Methods and Software 1, 1992, 23-34 (Gordon &amp; Breach Science
+       Publishers).
+
+julia&gt; table = OpenML.load(15)
+[ Info: Downloading dataset 15.
+Tables.DictColumnTable with 699 rows, 10 columns, and schema:
+ :Clump_Thickness        Float64
+ :Cell_Size_Uniformity   Float64
+ :Cell_Shape_Uniformity  Float64
+ :Marginal_Adhesion      Float64
+ :Single_Epi_Cell_Size   Float64
+ :Bare_Nuclei            Union{Missing, Float64}
+ :Bland_Chromatin        Float64
+ :Normal_Nucleoli        Float64
+ :Mitoses                Float64
+ :Class                  CategoricalArrays.CategoricalValue{String, UInt32}</code></pre><p>Converting to a data frame:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(table)
+699×10 DataFrame
+ Row │ Clump_Thickness  Cell_Size_Uniformity  Cell_Shape_Uniformity  Marginal_ ⋯
+     │ Float64          Float64               Float64                Float64   ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │             5.0                   1.0                    1.0            ⋯
+   2 │             5.0                   4.0                    4.0
+   3 │             3.0                   1.0                    1.0
+   4 │             6.0                   8.0                    8.0
+   5 │             4.0                   1.0                    1.0            ⋯
+   6 │             8.0                  10.0                   10.0
+   7 │             1.0                   1.0                    1.0
+   8 │             2.0                   1.0                    2.0
+  ⋮  │        ⋮                  ⋮                      ⋮                    ⋮ ⋱
+ 693 │             3.0                   1.0                    1.0            ⋯
+ 694 │             3.0                   1.0                    1.0
+ 695 │             3.0                   1.0                    1.0
+ 696 │             2.0                   1.0                    1.0
+ 697 │             5.0                  10.0                   10.0            ⋯
+ 698 │             4.0                   8.0                    6.0
+ 699 │             4.0                   8.0                    8.0
+                                                  7 columns and 684 rows omitted</code></pre><p>Inspecting it&#39;s schema:</p><pre><code class="language-julia-repl">julia&gt; using ScientificTypes
+
+julia&gt; schema(table)
+┌───────────────────────┬────────────────────────────┬──────────────────────────
+│ names                 │ scitypes                   │ types                   ⋯
+├───────────────────────┼────────────────────────────┼──────────────────────────
+│ Clump_Thickness       │ Continuous                 │ Float64                 ⋯
+│ Cell_Size_Uniformity  │ Continuous                 │ Float64                 ⋯
+│ Cell_Shape_Uniformity │ Continuous                 │ Float64                 ⋯
+│ Marginal_Adhesion     │ Continuous                 │ Float64                 ⋯
+│ Single_Epi_Cell_Size  │ Continuous                 │ Float64                 ⋯
+│ Bare_Nuclei           │ Union{Missing, Continuous} │ Union{Missing, Float64} ⋯
+│ Bland_Chromatin       │ Continuous                 │ Float64                 ⋯
+│ Normal_Nucleoli       │ Continuous                 │ Float64                 ⋯
+│ Mitoses               │ Continuous                 │ Float64                 ⋯
+│ Class                 │ Multiclass{2}              │ CategoricalValue{String ⋯
+└───────────────────────┴────────────────────────────┴──────────────────────────
+                                                                1 column omitted</code></pre><h2 id="Public-API"><a class="docs-heading-anchor" href="#Public-API">Public API</a><a id="Public-API-1"></a><a class="docs-heading-anchor-permalink" href="#Public-API" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="OpenML.list_tags" href="#OpenML.list_tags"><code>OpenML.list_tags</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">list_tags()</code></pre><p>List all available tags.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaAI/OpenML.jl/blob/aaecedfcd4a74fe757861c7f5466c0ddf19e4c7f/src/data.jl#L180-L184">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="OpenML.list_datasets" href="#OpenML.list_datasets"><code>OpenML.list_datasets</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">list_datasets(; tag = nothing, filters = &quot;&quot;, output_format = NamedTuple)</code></pre><p>Lists all active OpenML datasets, if <code>tag = nothing</code> (default). To list only datasets with a given tag, choose one of the tags in <a href="#OpenML.list_tags"><code>list_tags()</code></a>. An alternative <code>output_format</code> can be chosen, e.g. <code>DataFrame</code>, if the <code>DataFrames</code> package is loaded.</p><p>A filter is a string of <code>&lt;data quality&gt;/&lt;range&gt;</code> or <code>&lt;data quality&gt;/&lt;value&gt;</code> pairs, concatenated using <code>/</code>, such as</p><pre><code class="language-julia">    filter = &quot;number_features/10/number_instances/500..10000&quot;</code></pre><p>The allowed data qualities include <code>tag</code>, <code>status</code>, <code>limit</code>, <code>offset</code>, <code>data_id</code>, <code>data_name</code>, <code>data_version</code>, <code>uploader</code>, <code>number_instances</code>, <code>number_features</code>, <code>number_classes</code>, <code>number_missing_values</code>.</p><p>For more on the format and effect of <code>filters</code> refer to the <a href="https://www.openml.org/api_docs#!/data/get_data_list_filters">openml API</a>.</p><p><strong>Examples</strong></p><pre><code class="language-none">julia&gt; using DataFrames
+
+julia&gt; ds = OpenML.list_datasets(
+               tag = &quot;OpenML100&quot;,
+               filter = &quot;number_instances/100..1000/number_features/1..10&quot;,
+               output_format = DataFrame
+)
+
+julia&gt; sort!(ds, :NumberOfFeatures)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaAI/OpenML.jl/blob/aaecedfcd4a74fe757861c7f5466c0ddf19e4c7f/src/data.jl#L109-L144">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="OpenML.describe_dataset" href="#OpenML.describe_dataset"><code>OpenML.describe_dataset</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">describe_dataset(id)</code></pre><p>Load and show the OpenML description of the data set <code>id</code>. Use <a href="#OpenML.list_datasets"><code>list_datasets</code></a> to browse available data sets.</p><p><strong>Examples</strong></p><pre><code class="language-none">julia&gt; OpenML.describe_dataset(6)
+  Author: David J. Slate Source: UCI
+  (https://archive.ics.uci.edu/ml/datasets/Letter+Recognition) - 01-01-1991 Please cite: P.
+  W. Frey and D. J. Slate. &quot;Letter Recognition Using Holland-style Adaptive Classifiers&quot;.
+  Machine Learning 6(2), 1991
+
+    1. TITLE:
+
+  Letter Image Recognition Data
+
+  The objective is to identify each of a large number of black-and-white
+  rectangular pixel displays as one of the 26 capital letters in the English
+  alphabet.  The character images were based on 20 different fonts and each
+  letter within these 20 fonts was randomly distorted to produce a file of
+  20,000 unique stimuli.  Each stimulus was converted into 16 primitive
+  numerical attributes (statistical moments and edge counts) which were then
+  scaled to fit into a range of integer values from 0 through 15.  We
+  typically train on the first 16000 items and then use the resulting model
+  to predict the letter category for the remaining 4000.  See the article
+  cited above for more details.</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaAI/OpenML.jl/blob/aaecedfcd4a74fe757861c7f5466c0ddf19e4c7f/src/data.jl#L192-L221">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="OpenML.load" href="#OpenML.load"><code>OpenML.load</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">OpenML.load(id; maxbytes = nothing)</code></pre><p>Load the OpenML dataset with specified <code>id</code>, from those listed by <a href="#OpenML.list_datasets"><code>list_datasets</code></a> or on the <a href="https://www.openml.org/search?type=data">OpenML site</a>.</p><p>Datasets are saved as julia artifacts so that they persist locally once loaded.</p><p>Returns a table.</p><p><strong>Examples</strong></p><pre><code class="language-julia">using DataFrames
+table = OpenML.load(61)
+df = DataFrame(table) # transform to a DataFrame
+using ScientificTypes
+df2 = coerce(df, autotype(df)) # corce to automatically detected scientific types
+
+peek_table = OpenML.load(61, maxbytes = 1024) # load only the first 1024 bytes of the table</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaAI/OpenML.jl/blob/aaecedfcd4a74fe757861c7f5466c0ddf19e4c7f/src/data.jl#L47-L68">source</a></section></article></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 26 December 2022 19:35">Monday 26 December 2022</span>. Using Julia version 1.8.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
