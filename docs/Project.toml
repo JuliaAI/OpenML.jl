@@ -3,6 +3,7 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 OpenML = "8b6db2d4-7670-4922-a472-f9537c81ab66"
 ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
+DocumenterMarkdown
 
 [compat]
 Documenter = "~0.26"
