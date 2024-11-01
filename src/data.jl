@@ -72,7 +72,10 @@ function load(id::Int; maxbytes = nothing)
         @info "Downloading dataset $id."
         download(load_Dataset_Description(id)["data_set_description"]["url"], fname)
     end
-    ARFFFiles.load(x -> ARFFFiles.readcolumns(x; maxbytes = maxbytes), fname)
+    open(fname) do io
+        reader = ARFFFiles.loadstreaming(io)
+        return ARFFFiles.readcolumns(reader; maxbytes=maxbytes)
+    end
 end
 
 
