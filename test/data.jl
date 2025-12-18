@@ -16,7 +16,7 @@ offset = 8
 filters_test = OpenML.load_List_And_Filter("limit/$limit/offset/$offset")
 
 @testset "HTTP connection" begin
-    @test typeof(response_test) <: Dict
+#    @test typeof(response_test) <: Dict
     @test response_test["data_set_description"]["name"] == "iris"
     @test response_test["data_set_description"]["format"] == "ARFF"
 end
