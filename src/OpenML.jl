@@ -5,6 +5,7 @@ using JSON
 import ARFFFiles
 using Markdown
 using Scratch
+import Downloads
 
 export OpenML
 
