@@ -70,7 +70,9 @@ function load(id::Int; maxbytes = nothing)
     fname = joinpath(download_cache, "$id.arff")
     if !isfile(fname)
         @info "Downloading dataset $id."
-        download(load_Dataset_Description(id)["data_set_description"]["url"], fname)
+        Downloads.download(
+            load_Dataset_Description(id)["data_set_description"]["url"],
+            fname,)
     end
     open(fname) do io
         reader = ARFFFiles.loadstreaming(io)
