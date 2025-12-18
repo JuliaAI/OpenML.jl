@@ -28,13 +28,8 @@ end
 end
 
 @testset "data api functions" begin
-#    @test typeof(dqlist_test["data_qualities_list"]) <: Dict
-#    @test typeof(data_features_test) <: Dict
     @test length(data_features_test["data_features"]["feature"]) == 5
     @test data_features_test["data_features"]["feature"][1]["name"] == "sepallength"
-
-#    @test typeof(data_qualities_test) <: Dict
-
     @test length(filters_test["data"]["dataset"]) == limit
     @test length(filters_test["data"]["dataset"][1]) == offset
 end
