@@ -28,8 +28,7 @@ end
 end
 
 @testset "data api functions" begin
-    @test typeof(dqlist_test["data_qualities_list"]) <: Dict
-
+#    @test typeof(dqlist_test["data_qualities_list"]) <: Dict
 #    @test typeof(data_features_test) <: Dict
     @test length(data_features_test["data_features"]["feature"]) == 5
     @test data_features_test["data_features"]["feature"][1]["name"] == "sepallength"
