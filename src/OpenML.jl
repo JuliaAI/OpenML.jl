@@ -5,6 +5,7 @@ using JSON
 import ARFFFiles
 using Markdown
 using Scratch
+import Downloads
 
 export OpenML
 
@@ -17,3 +18,4 @@ function __init__()
 end
 
 end # module
+ 
