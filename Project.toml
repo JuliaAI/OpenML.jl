@@ -1,6 +1,6 @@
 name = "OpenML"
 uuid = "8b6db2d4-7670-4922-a472-f9537c81ab66"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["Diego Arenas <darenasc@gmail.com>", "Anthony D. Blaom <anthony.blaom@gmail.com>"]
 
 [deps]
