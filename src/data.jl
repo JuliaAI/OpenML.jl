@@ -1,4 +1,9 @@
 const API_URL = "https://www.openml.org/api/v1/json"
+# Host name without any port. HTTP.jl v2 otherwise puts the port into the `Host`
+# header (e.g. "www.openml.org:443"), which OpenML's server rejects (it closes the
+# connection, surfacing as an "unexpected EOF" parse error). Setting `Host`
+# explicitly keeps the default port out of it; HTTP.jl v0.x/v1.x already do so.
+const API_HOST = HTTP.URI(API_URL).host
 
 struct OpenMLAPIError <: Exception
     msg::String
@@ -11,7 +16,7 @@ end
 # Data API. See REST API on https://www.openml.org/apis
 function get(query)
     try
-        r = HTTP.request("GET", string(API_URL, query))
+        r = HTTP.request("GET", string(API_URL, query); headers = ["Host" => API_HOST])
         return JSON.parse(String(r.body))
     catch e
         if isa(e, HTTP.StatusError) && e.status == 412
