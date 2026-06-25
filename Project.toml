@@ -1,7 +1,7 @@
 name = "OpenML"
 uuid = "8b6db2d4-7670-4922-a472-f9537c81ab66"
+version = "0.3.4"
 authors = ["Diego Arenas <darenasc@gmail.com>", "Anthony D. Blaom <anthony.blaom@gmail.com>"]
-version = "0.3.3"
 
 [deps]
 ARFFFiles = "da404889-ca92-49ff-9e8b-0aa6b4d38dc8"
@@ -15,7 +15,7 @@ Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 [compat]
 ARFFFiles = "1.4.1"
 Downloads = "1.6.0"
-HTTP = "0.8, 0.9, 1"
+HTTP = "0.8, 0.9, 1, 2"
 JSON = "0.21, 1"
 Scratch = "1.1"
 julia = "1.6"
