@@ -7,4 +7,5 @@ ScientificTypes = "321657f4-b219-11e9-178b-2701a2544e81"
 [compat]
 DataFrames = "1.8.2"
 Documenter = "1"
+OpenML = "0.3.4"
 ScientificTypes = "3.3.0"
