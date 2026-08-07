@@ -6,7 +6,7 @@ makedocs(
     modules = [OpenML,],
     sitename = "OpenML.jl",
     warnonly = [:cross_references, :missing_docs],
-    repo = Remotes.GitHub("JuliaAI", "LearnAPI.jl"),
+    repo = Remotes.GitHub("JuliaAI", "OpenML.jl"),
 )
 
 deploydocs(
