@@ -14,7 +14,7 @@ Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 
 [compat]
 ARFFFiles = "1.4.1"
-Downloads = "1.6.0"
+Downloads = "1.6.0, < 0.0.1, 1.4"
 HTTP = "0.8, 0.9, 1, 2"
 JSON = "0.21, 1"
 Scratch = "1.1"
